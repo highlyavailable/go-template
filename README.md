@@ -8,7 +8,9 @@ A Go application template with a structured layout and Docker support. Use the `
 
 ### Prerequisites
 
-Ensure you have `make` and `Go` installed. Docker is optional for containerized runs.
+- Go 1.20 (specified in `go.mod`)
+- `make` installed
+- Docker (optional, for containerized runs)
 
 ### Build and Run
 
