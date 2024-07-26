@@ -8,8 +8,15 @@ all: env build run
 env:
 	@echo "-> Checking for .env file"
 	@if [ ! -f .env ]; then \
-	    echo ".env file not found, creating one"; \
-	    cp .env.example .env; \
+        echo ".env file not found, creating one"; \
+        touch .env; \
+        echo "APP_NAME=$(APP_NAME)" >> .env; \
+        echo "ENV=development" >> .env; \
+        echo "PORT=8080" >> .env; \
+        echo "LOG_LEVEL=debug" >> .env; \
+		echo ".env file created"; \
+	else \
+		echo ".env file found"; \
 	fi
 	set -a; source .env; set +a
 

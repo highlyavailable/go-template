@@ -1,16 +1,19 @@
 package logging
 
 import (
+	"os"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 var logger *zap.Logger
 
-// InitLogger initializes the logger, it takes an environment string
-// which can be either "development" or "production"
-func InitLogger(env string) {
+// InitLogger initializes the logger, expects an environment variable "ENV"
+// which can be either "development" or "production". Defaults to "development".
+func InitLogger() {
 	var config zap.Config
+	env := os.Getenv("ENV")
 	if env == "production" {
 		config = zap.NewProductionConfig()
 	} else {

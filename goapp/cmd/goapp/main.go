@@ -3,29 +3,22 @@ package main
 import (
 	"fmt"
 	"goapp/internal/logging"
-	"os"
 
 	"github.com/joho/godotenv"
 )
 
-// Expects a .env file in the root of the project
-// with the following content:
-// ENV=development
+const (
+	envPath = "../.env"
+)
 
 func main() {
 	// Load the .env file
-	err := godotenv.Load()
+	err := godotenv.Load(envPath)
 	if err != nil {
 		fmt.Println("No .env file found")
 	}
 
-	// Get the environment
-	env := os.Getenv("ENV")
-	if env == "" {
-		env = "development"
-	}
-
-	logging.InitLogger(env) // Initialize the logger
-	// logging.Info("This is an info message")
+	logging.InitLogger() // Initialize the logger
+	logging.Info("Good to go")
 	// logging.Error("This is an error message")
 }
