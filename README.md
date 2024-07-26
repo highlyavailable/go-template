@@ -1,8 +1,8 @@
-# Go Template App
+# Go Template
 
 ## Overview
 
-Go Template App is a Go application template with a structured layout and Docker support. Use the `Makefile` to build and run the application efficiently.
+A Go application template with a structured layout and Docker support. Use the `Makefile` to build and run the application efficiently.
 
 ## Getting Started
 
@@ -50,8 +50,10 @@ Ensure you have `make` and `Go` installed. Docker is optional for containerized 
    ```
 
 ## File Structure
+File structure of the template application:
 
 ```
+> tree
 .
 ├── Dockerfile
 ├── Makefile
@@ -78,5 +80,5 @@ Ensure you have `make` and `Go` installed. Docker is optional for containerized 
 │   │   └── models
 │   ├── pkg
 │   └── scripts
-├── rename_app.sh
+└── rename_app.sh
 ```
