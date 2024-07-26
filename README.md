@@ -58,10 +58,6 @@ Tree structure of the template:
 ├── Dockerfile
 ├── Makefile
 ├── README.md
-├── app
-│   ├── build
-│   │   └── app
-│   └── cmd
 ├── docker-compose.yml
 ├── goapp
 │   ├── build
@@ -82,5 +78,5 @@ Tree structure of the template:
 │   └── scripts
 └── rename_app.sh
 
-15 directories, 12 files
+12 directories, 11 files
 ```
