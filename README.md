@@ -50,7 +50,7 @@ Ensure you have `make` and `Go` installed. Docker is optional for containerized 
    ```
 
 ## File Structure
-File structure of the template application:
+Tree structure of the template:
 
 ```
 > tree
@@ -81,4 +81,6 @@ File structure of the template application:
 │   ├── pkg
 │   └── scripts
 └── rename_app.sh
+
+15 directories, 12 files
 ```
