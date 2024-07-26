@@ -76,10 +76,15 @@ Tree structure of the template:
 │   ├── internal
 │   │   ├── config
 │   │   │   └── config.go
+│   │   ├── logging
+│   │   │   └── logging.go
 │   │   └── models
+│   ├── logs
+│   │   ├── app.log
+│   │   └── error.log
 │   ├── pkg
 │   └── scripts
 └── rename_app.sh
 
-13 directories, 11 files
+15 directories, 14 files
 ```
