@@ -60,7 +60,7 @@ Tree structure of the template:
 ├── Dockerfile
 ├── Makefile
 ├── README.md
-├── docker-compose.yml
+├── docker-compose.yaml
 ├── goapp
 │   ├── assets
 │   ├── build
