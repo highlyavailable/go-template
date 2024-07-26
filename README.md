@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Go application template with a structured layout and Docker support. Use the `Makefile` to build and run the application efficiently.
+A Go application template with a structured layout and Docker support. `Makefile` is included for easy build and run commands.
 
 ## Getting Started
 
