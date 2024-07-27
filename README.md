@@ -67,7 +67,6 @@ Tree structure of the template:
 │   │   └── goapp
 │   ├── cmd
 │   │   └── goapp
-│   │       ├── logs
 │   │       └── main.go
 │   ├── configs
 │   │   └── config.yaml
