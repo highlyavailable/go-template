@@ -49,7 +49,14 @@ func main() {
 	// logging.TestRotation(1e4)     // Test log rotation by dumping 10,000 error msgs
 
 	// Create a new insecure client (does not verify TLS certs)
-	client := clients.NewInsecureClient()
+	client, err := clients.NewInsecureClient()
+	if err != nil {
+		logging.Error("Error creating insecure client", zap.Error(err))
+		fmt.Println("Error creating insecure client:", err)
+		return
+	}
+
+	fmt.Println(client.CheckRedirect)
 
 	// Create a new secure client
 	// certDirPath := os.Getenv("CERT_DIR_PATH")
@@ -64,21 +71,5 @@ func main() {
 	// 	fmt.Println("Error creating secure client:", err)
 	// 	return
 	// }
-
-	// Test the client by making a request to google.com
-	resp, err := client.Get("https://www.google.com")
-	if err != nil {
-		logging.Error("Error making request", zap.Error(err))
-		fmt.Println("Error making request:", err)
-		return
-	}
-	defer resp.Body.Close()
-	logging.Info("Response status code", zap.Int("status_code", resp.StatusCode))
-	if resp.StatusCode != 200 {
-		fmt.Println("Response status code:", resp.StatusCode)
-		return
-	}
-
-	logging.Info("Request successful")
 
 }
