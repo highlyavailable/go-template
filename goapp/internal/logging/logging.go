@@ -57,6 +57,7 @@ func InitLogger(newLogger LoggerConfig) {
 			panic(err)
 		}
 	}
+
 	if _, err := os.Stat(filepath.Dir(newLogger.ErrLogPath)); os.IsNotExist(err) {
 		err = os.MkdirAll(filepath.Dir(newLogger.ErrLogPath), 0755)
 		if err != nil {
