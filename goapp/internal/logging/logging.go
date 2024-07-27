@@ -122,7 +122,7 @@ func Error(msg string, fields ...zap.Field) {
 	logger.Error(msg, fields...)
 }
 
-// Writes entries + 1 to the Error log to test log rotation
+// Writes number entries + 1 to the Error log to test log rotation
 func TestRotation(entries int) {
 	Info("Dumping " + string(entries) + " entries to the log")
 	for i := 0; i < entries; i++ {
