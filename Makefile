@@ -1,24 +1,36 @@
 APP_NAME=goapp
+CONTAINER_NAME=$(APP_NAME)
+IMAGE_NAME=$(APP_NAME)
 BINARY_PATH=./build/$(APP_NAME)
 ENTRY_POINT=./cmd/$(APP_NAME)
 CD_APP=cd $(APP_NAME) &&
+PATH_TO_DOCKER_RECYCLE=./docker-recycle.sh
+
+# Set the path to the .env file, defaulting to the current directory if not set
+ENV_PATH ?= .env
+
+# Load environment variables
+ifneq (,$(wildcard $(ENV_PATH)))
+    include $(ENV_PATH)
+    export
+endif
 
 all: env build run
 
 env:
 	@echo "-> Checking for .env file"
-	@if [ ! -f .env ]; then \
+	@if [ ! -f $(ENV_PATH) ]; then \
         echo ".env file not found, creating one"; \
-        touch .env; \
-        echo "APP_NAME=$(APP_NAME)" >> .env; \
-        echo "ENV=development" >> .env; \
-        echo "PORT=8080" >> .env; \
-        echo "LOG_LEVEL=debug" >> .env; \
-		echo ".env file created"; \
+        touch $(ENV_PATH); \
+        echo "APP_NAME=$(APP_NAME)" >> $(ENV_PATH); \
+        echo "ENV=development" >> $(ENV_PATH); \
+        echo "PORT=8080" >> $(ENV_PATH); \
+        echo "LOG_LEVEL=debug" >> $(ENV_PATH); \
+        echo ".env file created"; \
 	else \
 		echo ".env file found"; \
 	fi
-	set -a; source .env; set +a
+	set -a; source $(ENV_PATH); set +a
 
 build:
 	@echo "-> Building $(APP_NAME)"
@@ -44,3 +56,12 @@ run:
 	@echo "-> Running $(APP_NAME)"
 	$(CD_APP) chmod +x $(BINARY_PATH)
 	$(CD_APP) $(BINARY_PATH)
+
+docker-recycle:
+	@echo "-> Recycle docker containers"
+	chmod +x $(PATH_TO_DOCKER_RECYCLE)
+	$(PATH_TO_DOCKER_RECYCLE)
+
+docker-exec:
+	@echo "-> Executing shell in $(CONTAINER_NAME)"
+	docker run -it --entrypoint /bin/sh -e ENV_PATH=$(CONTAINER_ENV_PATH) $(CONTAINER_NAME)

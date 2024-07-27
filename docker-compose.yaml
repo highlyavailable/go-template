@@ -1,12 +1,15 @@
 services:
   app:
-    container_name: go-app
+    container_name: goapp
+    image: goapp
     build: 
       context: .
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
+    environment:
+      - PROJECT_ROOT=/goapp
+      - ENV_PATH=.env
     volumes:
-      # Mounted app and error logs
-      - ./logs/app.log:./logs/app.log
-      - ./logs/error.log:./logs/error.log
+    # Mount the entire logs directory
+      - ./logs:/logs

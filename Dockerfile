@@ -9,6 +9,9 @@ RUN go mod download
 # Copy source code
 COPY goapp .
 
+# Copy .env to /goapp/.env in the container
+COPY .env /goapp/.env
+
 # Build the application and produce a binary in the build folder
 RUN go build -o build/goapp ./cmd/goapp
 

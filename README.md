@@ -48,7 +48,7 @@ A Go application template with a structured layout and Docker support. `Makefile
    If using Docker, run a shell in the container:
 
    ```bash
-   docker run -it --entrypoint /bin/sh go-template-app
+   docker run -it --entrypoint /bin/sh go-app
    ```
 
 ## File Structure
@@ -61,30 +61,31 @@ Tree structure of the template:
 ├── Makefile
 ├── README.md
 ├── docker-compose.yaml
+├── docker-recycle.sh
 ├── goapp
-│   ├── assets
-│   ├── build
-│   │   └── goapp
-│   ├── cmd
-│   │   └── goapp
-│   │       └── main.go
-│   ├── configs
-│   │   └── config.yaml
-│   ├── docs
-│   ├── go.mod
-│   ├── go.sum
-│   ├── internal
-│   │   ├── config
-│   │   │   └── config.go
-│   │   ├── logging
-│   │   │   └── logging.go
-│   │   └── models
-│   ├── logs
-│   │   ├── app.log
-│   │   └── error.log
-│   ├── pkg
-│   └── scripts
+│   ├── assets
+│   ├── build
+│   │   └── goapp
+│   ├── cmd
+│   │   └── goapp
+│   │       └── main.go
+│   ├── configs
+│   │   └── config.yaml
+│   ├── docs
+│   ├── go.mod
+│   ├── go.sum
+│   ├── internal
+│   │   ├── config
+│   │   │   └── config.go
+│   │   ├── logging
+│   │   │   └── logging.go
+│   │   └── models
+│   ├── pkg
+│   └── scripts
+├── logs
+│   ├── app.log
+│   └── error.log
 └── rename_app.sh
 
-15 directories, 14 files
+15 directories, 15 files
 ```
