@@ -10,6 +10,7 @@ services:
     environment:
       - PROJECT_ROOT=/goapp
       - ENV_PATH=.env
+      - LOG_DIR_PATH=/logs
     volumes:
     # Mount the entire logs directory
       - ./logs:/logs
