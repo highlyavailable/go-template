@@ -13,6 +13,7 @@ var logger *zap.Logger
 
 type LoggerConfig struct {
 	Environment      string
+	WriteStdout      bool
 	EnableStackTrace bool
 	MaxSize          int
 	MaxBackups       int
@@ -89,18 +90,32 @@ func InitLogger(newLogger LoggerConfig) {
 	}
 
 	// Create new zap logger with synced cores for app and error logs
-	core := zapcore.NewTee(
-		zapcore.NewCore(
-			zapcore.NewJSONEncoder(config.EncoderConfig),
-			zapcore.AddSync(lumberjackLogger),
-			zap.DebugLevel, // Log everything to app.log
-		),
-		zapcore.NewCore(
-			zapcore.NewJSONEncoder(config.EncoderConfig),
-			zapcore.AddSync(lumberjackErrorLogger),
-			zap.ErrorLevel, // Log only errors to error.log
-		),
+	appLogCore := zapcore.NewCore(
+		zapcore.NewJSONEncoder(config.EncoderConfig),
+		zapcore.AddSync(lumberjackLogger),
+		zap.DebugLevel, // Log everything to app.log
 	)
+
+	errorLogCore := zapcore.NewCore(
+		zapcore.NewJSONEncoder(config.EncoderConfig),
+		zapcore.AddSync(lumberjackErrorLogger),
+		zap.ErrorLevel, // Log only errors to error.log
+	)
+
+	var cores []zapcore.Core
+	cores = append(cores, appLogCore, errorLogCore)
+
+	// Conditionally add the stdout core
+	if newLogger.WriteStdout {
+		stdoutCore := zapcore.NewCore(
+			zapcore.NewConsoleEncoder(config.EncoderConfig),
+			zapcore.AddSync(os.Stdout),
+			zap.DebugLevel, // Log everything to stdout
+		)
+		cores = append(cores, stdoutCore)
+	}
+
+	core := zapcore.NewTee(cores...)
 
 	if newLogger.EnableStackTrace {
 		// Create a new logger with the zap logger configuration
@@ -110,8 +125,8 @@ func InitLogger(newLogger LoggerConfig) {
 		logger = zap.New(core, zap.AddCaller())
 	}
 
-	zap.ReplaceGlobals(logger)        // Replace zap's global logger
-	logger.Info("Logger initialized") // Announce the logger is initialized
+	zap.ReplaceGlobals(logger) // Replace zap's global logger
+	logger.Info("Logger initialized with config", zap.Any("config", newLogger))
 }
 
 func Info(msg string, fields ...zap.Field) {
