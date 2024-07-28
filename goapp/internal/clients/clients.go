@@ -12,8 +12,15 @@ import (
 	"go.uber.org/zap"
 )
 
+type SecureClientConfig struct {
+	CertFile       string // Path to the client certificate
+	KeyFile        string // Path to the client key
+	ProxyURL       string // URL of the proxy server
+	URLForConnTest string // URL to test the client connection
+}
+
 // NewInsecureClient creates an HTTP client that does not verify TLS certificates
-func NewInsecureClient() (*http.Client, error) {
+func NewInsecureClient(urlForRequest string) (*http.Client, error) {
 	transport := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -22,7 +29,7 @@ func NewInsecureClient() (*http.Client, error) {
 		Timeout:   30 * time.Second,
 	}
 
-	err := testClient(client)
+	err := testClient(client, urlForRequest)
 	if err != nil {
 		logging.Error("Error testing client", zap.Error(err))
 		fmt.Println("Error testing client:", err)
@@ -33,9 +40,9 @@ func NewInsecureClient() (*http.Client, error) {
 }
 
 // NewSecureClient creates an HTTP client that uses proxies and verifies TLS certificates
-func NewSecureClient(proxyURL string, certFile string, keyFile string) (*http.Client, error) {
+func NewSecureClient(clientConfig SecureClientConfig) (*http.Client, error) {
 	// Load client cert
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	cert, err := tls.LoadX509KeyPair(clientConfig.CertFile, clientConfig.KeyFile)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +53,7 @@ func NewSecureClient(proxyURL string, certFile string, keyFile string) (*http.Cl
 	}
 
 	// Parse proxy URL
-	proxy, err := url.Parse(proxyURL)
+	proxy, err := url.Parse(clientConfig.ProxyURL)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +72,7 @@ func NewSecureClient(proxyURL string, certFile string, keyFile string) (*http.Cl
 		Timeout:   30 * time.Second,
 	}
 
-	err = testClient(client)
+	err = testClient(client, clientConfig.URLForConnTest)
 	if err != nil {
 		logging.Error("Error testing client", zap.Error(err))
 		fmt.Println("Error testing client:", err)
@@ -75,9 +82,20 @@ func NewSecureClient(proxyURL string, certFile string, keyFile string) (*http.Cl
 	return client, nil
 }
 
-func testClient(c *http.Client) error {
+func testClient(c *http.Client, urlForRequest string) error {
+	if urlForRequest == "" {
+		urlForRequest = "https://www.google.com"
+	}
+
+	// assert valid URL
+	_, err := url.ParseRequestURI(urlForRequest)
+	if err != nil {
+		logging.Error("Error parsing URL", zap.Error(err))
+		return err
+	}
+
 	// Create a new insecure client
-	resp, err := c.Get("https://www.google.com")
+	resp, err := c.Get(urlForRequest)
 	if err != nil {
 		logging.Error("Error making request", zap.Error(err))
 		return err

@@ -12,15 +12,15 @@ import (
 var logger *zap.Logger
 
 type LoggerConfig struct {
-	Environment      string
-	WriteStdout      bool
-	EnableStackTrace bool
-	MaxSize          int
-	MaxBackups       int
-	MaxAge           int
-	Compress         bool
-	AppLogPath       string
-	ErrLogPath       string
+	Environment      string // "production" OR "development", default is "development"
+	WriteStdout      bool   // Write logs to stdout
+	EnableStackTrace bool   // Enable stack trace logging
+	MaxSize          int    // Max size in megabytes before log is rotated
+	MaxBackups       int    // Max number of old log files to keep
+	MaxAge           int    // Max number of days to retain old log files
+	Compress         bool   // Compress the rotated log files (generates .gz files)
+	AppLogPath       string // Path to the app log file
+	ErrLogPath       string // Path to the error log file
 }
 
 // InitLogger initializes the logger corresponding to the environment
@@ -126,7 +126,7 @@ func InitLogger(newLogger LoggerConfig) {
 	}
 
 	zap.ReplaceGlobals(logger) // Replace zap's global logger
-	logger.Info("Logger initialized with config", zap.Any("config", newLogger))
+	// logger.Info("Logger config", zap.Any("config", newLogger))
 }
 
 func Info(msg string, fields ...zap.Field) {

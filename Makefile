@@ -15,7 +15,7 @@ ifneq (,$(wildcard $(ENV_PATH)))
     export
 endif
 
-all: env build run
+all: env swagger build run
 
 env:
 	@echo "-> Checking for .env file"
@@ -31,6 +31,11 @@ env:
 		echo ".env file found"; \
 	fi
 	set -a; source $(ENV_PATH); set +a
+
+swagger:
+	@echo "-> Generating swagger docs"
+	@echo "Working directory: $(CD_APP)"
+	$(CD_APP) swag init -g $(ENTRY_POINT)/main.go
 
 build:
 	@echo "-> Building $(APP_NAME)"
@@ -65,3 +70,7 @@ docker-recycle:
 docker-exec:
 	@echo "-> Executing shell in $(CONTAINER_NAME)"
 	docker run -it --entrypoint /bin/sh -e ENV_PATH=$(CONTAINER_ENV_PATH) $(CONTAINER_NAME)
+
+tidy:
+	@echo "-> Running go mod tidy"
+	$(CD_APP) go mod tidy

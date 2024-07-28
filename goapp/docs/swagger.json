@@ -1,0 +1,45 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a sample server GoApp server.z",
+        "title": "GoApp Gin Rest API",
+        "termsOfService": "\u003curl\u003e",
+        "contact": {
+            "name": "Peter Bryant",
+            "url": "\u003curl\u003e",
+            "email": "\u003cemail\u003e"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "\u003curl\u003e"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/health": {
+            "get": {
+                "description": "Do a health check",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

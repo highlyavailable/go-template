@@ -2,37 +2,40 @@ package main
 
 import (
 	"fmt"
-	"goapp/internal/clients"
+	"goapp/api/routes"
 	"goapp/internal/config"
 	"goapp/internal/logging"
+	"goapp/internal/otel"
+	"log"
 	"os"
 
-	"github.com/joho/godotenv"
+	_ "goapp/docs" // Import generated docs
+
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.uber.org/zap"
 )
 
-func main() {
-	// Load the .env file
-	envPath := os.Getenv("ENV_PATH")
-	if envPath == "" {
-		panic("ENV_PATH environment variable is not set")
-	}
-	err := godotenv.Load(envPath)
-	if err != nil {
-		fmt.Printf("Error loading .env file at %s: %v\n", envPath, err)
-		panic(err)
-	}
+// Import generated docs
 
+// @title GoApp Gin Rest API
+// @version 1.0
+// @description This is a sample server GoApp server.z
+// @termsOfService <url>
+
+// @contact.name Peter Bryant
+// @contact.url <url>
+// @contact.email <email>
+// @license.name Apache 2.0
+// @license.url <url>
+
+// @host localhost:8080
+// @BasePath /
+func main() {
 	// List of required environment variables
 	requiredVars := []string{"ENV", "ENV_PATH", "LOG_DIR_PATH", "CERT_DIR_PATH"}
+	config.LoadEnv(requiredVars) // Panic if not found
 
-	// Check if required environment variables are set
-	err = config.CheckRequiredEnvVars(requiredVars)
-	if err != nil {
-		panic(err)
-	}
-
-	// Custom logger struct see gomodule/internal/logging/logging.go
+	// Init zap logger
 	newLogger := logging.LoggerConfig{
 		Environment:      os.Getenv("ENV"),
 		WriteStdout:      true,
@@ -44,32 +47,51 @@ func main() {
 		AppLogPath:       fmt.Sprintf("%s/app.log", os.Getenv("LOG_DIR_PATH")),
 		ErrLogPath:       fmt.Sprintf("%s/error.log", os.Getenv("LOG_DIR_PATH")),
 	}
+	logging.InitLogger(newLogger)
+	// logging.TestRotation(1e4)     // Test log rotation by dumping 10k error msgs
 
-	logging.InitLogger(newLogger) // Initialize the logger
-	// logging.TestRotation(1e4)     // Test log rotation by dumping 10,000 error msgs
+	// Initialize OpenTelemetry
+	shutdownTracer := otel.InitTracer()
+	defer shutdownTracer()
 
-	// Create a new insecure client (does not verify TLS certs)
-	client, err := clients.NewInsecureClient()
-	if err != nil {
-		logging.Error("Error creating insecure client", zap.Error(err))
-		fmt.Println("Error creating insecure client:", err)
-		return
+	shutdownMeter := otel.InitMeter()
+	defer shutdownMeter()
+
+	// Initialize the router
+	router := routes.SetupRouter() // Create all routes
+	logging.Info("Server started", zap.String("port", "8080"))
+	router.Use(otelgin.Middleware("goapp")) // Add OpenTelemetry middleware
+
+	// Start the server
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("Failed to run server: %v", err)
 	}
 
-	fmt.Println(client.CheckRedirect)
-
-	// Create a new secure client
-	// certDirPath := os.Getenv("CERT_DIR_PATH")
-	// certPath := fmt.Sprintf("%s/cert.pem", certDirPath)
-	// keyPath := fmt.Sprintf("%s/key.pem", certDirPath)
-	// logging.Info("Cert path", zap.String("cert_path", certPath))
-	// logging.Info("Key path", zap.String("key_path", keyPath))
-
-	// client, err := clients.NewSecureClient("http://proxy.example.com", certPath, keyPath)
-	// if err != nil {
-	// 	logging.Error("Error creating secure client", zap.Error(err))
-	// 	fmt.Println("Error creating secure client:", err)
-	// 	return
-	// }
-
 }
+
+// Create and test new insecure http client
+// _, err := clients.NewInsecureClient("http://google.com")
+// if err != nil {
+// 	logging.Error("Error creating insecure client", zap.Error(err))
+// 	fmt.Println("Error creating insecure client:", err)
+// 	return
+// }
+
+// Create a new secure client
+// certDirPath := os.Getenv("CERT_DIR_PATH")
+// certPath := fmt.Sprintf("%s/cert.pem", certDirPath)
+// keyPath := fmt.Sprintf("%s/key.pem", certDirPath)
+// logging.Info("Cert path", zap.String("cert_path", certPath))
+// logging.Info("Key path", zap.String("key_path", keyPath))
+// secureClientConfig := clients.SecureClientConfig{
+// 	CertFile: certPath,
+// 	KeyFile:  keyPath,
+// 	// ProxyURL:       "http://proxy.example.com",
+// 	URLForConnTest: "http://google.com",
+// }
+// _, err = clients.NewSecureClient(secureClientConfig)
+// if err != nil {
+// 	logging.Error("Error creating secure client", zap.Error(err))
+// 	fmt.Println("Error creating secure client:", err)
+// 	return
+// }
