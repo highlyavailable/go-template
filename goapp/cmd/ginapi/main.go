@@ -3,9 +3,10 @@ package main
 import (
 	"fmt"
 	"goapp/api/routes"
-	"goapp/internal/config"
-	"goapp/internal/logging"
-	"goapp/internal/otel"
+	"goapp/pkg/clients"
+	"goapp/pkg/env"
+	"goapp/pkg/logging"
+	"goapp/pkg/otel"
 	"log"
 	"os"
 
@@ -32,8 +33,8 @@ import (
 // @BasePath /
 func main() {
 	// List of required environment variables
-	requiredVars := []string{"ENV", "ENV_PATH", "LOG_DIR_PATH", "CERT_DIR_PATH"}
-	config.LoadEnv(requiredVars) // Panic if not found
+	requiredVars := []string{"ENV_PATH", "ENV", "LOG_DIR_PATH", "CERT_DIR_PATH"}
+	env.LoadEnv(requiredVars) // Panic if not found
 
 	// Init zap logger
 	newLogger := logging.LoggerConfig{
@@ -57,31 +58,31 @@ func main() {
 	defer shutdownMeter()
 
 	// Create and test new insecure http client
-	// _, err := clients.NewInsecureClient("http://google.com")
-	// if err != nil {
-	// 	logging.Error("Error creating insecure client", zap.Error(err))
-	// 	fmt.Println("Error creating insecure client:", err)
-	// 	return
-	// }
+	_, err := clients.NewInsecureClient("http://google.com")
+	if err != nil {
+		logging.Error("Error creating insecure client", zap.Error(err))
+		fmt.Println("Error creating insecure client:", err)
+		return
+	}
 
 	// Create a new secure client
-	// certDirPath := os.Getenv("CERT_DIR_PATH")
-	// certPath := fmt.Sprintf("%s/cert.pem", certDirPath)
-	// keyPath := fmt.Sprintf("%s/key.pem", certDirPath)
-	// logging.Info("Cert path", zap.String("cert_path", certPath))
-	// logging.Info("Key path", zap.String("key_path", keyPath))
-	// secureClientConfig := clients.SecureClientConfig{
-	// 	CertFile: certPath,
-	// 	KeyFile:  keyPath,
-	// 	// ProxyURL:       "http://proxy.example.com",
-	// 	URLForConnTest: "http://google.com",
-	// }
-	// _, err = clients.NewSecureClient(secureClientConfig)
-	// if err != nil {
-	// 	logging.Error("Error creating secure client", zap.Error(err))
-	// 	fmt.Println("Error creating secure client:", err)
-	// 	return
-	// }
+	certDirPath := os.Getenv("CERT_DIR_PATH")
+	certPath := fmt.Sprintf("%s/cert.pem", certDirPath)
+	keyPath := fmt.Sprintf("%s/key.pem", certDirPath)
+	logging.Info("Cert path", zap.String("cert_path", certPath))
+	logging.Info("Key path", zap.String("key_path", keyPath))
+	secureClientConfig := clients.SecureClientConfig{
+		CertFile: certPath,
+		KeyFile:  keyPath,
+		// ProxyURL:       "http://proxy.example.com",
+		URLForConnTest: "http://google.com",
+	}
+	_, err = clients.NewSecureClient(secureClientConfig)
+	if err != nil {
+		logging.Error("Error creating secure client", zap.Error(err))
+		fmt.Println("Error creating secure client:", err)
+		return
+	}
 
 	// Initialize the router
 	router := routes.SetupRouter() // Create all routes

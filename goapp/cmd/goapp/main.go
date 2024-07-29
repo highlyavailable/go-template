@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"goapp/internal/config"
-	"goapp/internal/logging"
-	"goapp/internal/otel"
+	"goapp/pkg/env"
+	"goapp/pkg/logging"
+	"goapp/pkg/otel"
 	"os"
 
 	_ "goapp/docs" // Import generated docs
@@ -12,8 +12,8 @@ import (
 
 func main() {
 	// List of required environment variables
-	requiredVars := []string{"ENV", "ENV_PATH", "LOG_DIR_PATH", "CERT_DIR_PATH"}
-	config.LoadEnv(requiredVars) // Panic if not found
+	requiredVars := []string{"ENV_PATH", "ENV", "LOG_DIR_PATH", "CERT_DIR_PATH"}
+	env.LoadEnv(requiredVars) // Panic if not found
 
 	// Init zap logger
 	newLogger := logging.LoggerConfig{

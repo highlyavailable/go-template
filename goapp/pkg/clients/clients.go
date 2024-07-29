@@ -3,7 +3,7 @@ package clients
 import (
 	"crypto/tls"
 	"fmt"
-	"goapp/internal/logging"
+	"goapp/pkg/logging"
 	"net"
 	"net/http"
 	"net/url"

@@ -2,7 +2,7 @@ package routes
 
 import (
 	"goapp/api/handlers"
-	"goapp/internal/logging"
+	"goapp/pkg/logging"
 
 	_ "goapp/docs" // Import generated docs
 

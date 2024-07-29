@@ -1,4 +1,4 @@
-package config
+package env
 
 import (
 	"fmt"
@@ -38,7 +38,7 @@ func checkRequiredEnvVars(requiredVars []string) error {
 		if os.Getenv(v) == "" {
 			missingVars = append(missingVars, v)
 		}
-		fmt.Println(v, " = ", os.Getenv(v))
+		// fmt.Println(v, " = ", os.Getenv(v))
 	}
 	if len(missingVars) > 0 {
 		return fmt.Errorf("missing required environment variables: %s", strings.Join(missingVars, ", "))
