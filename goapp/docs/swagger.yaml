@@ -1,17 +1,5 @@
-basePath: /
-host: localhost:8080
 info:
-  contact:
-    email: <email>
-    name: Peter Bryant
-    url: <url>
-  description: This is a sample server GoApp server.z
-  license:
-    name: Apache 2.0
-    url: <url>
-  termsOfService: <url>
-  title: GoApp Gin Rest API
-  version: "1.0"
+  contact: {}
 paths:
   /health:
     get:
