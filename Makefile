@@ -1,9 +1,10 @@
 APP_NAME=goapp
 CONTAINER_NAME=$(APP_NAME)
 IMAGE_NAME=$(APP_NAME)
+CD_APP=cd $(APP_NAME) &&
+
 BINARY_PATH=./build/$(APP_NAME)
 ENTRY_POINT=./cmd/$(APP_NAME)
-CD_APP=cd $(APP_NAME) &&
 PATH_TO_DOCKER_RECYCLE=./docker-recycle.sh
 
 # Set the path to the .env file, defaulting to the current directory if not set
