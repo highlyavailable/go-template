@@ -60,32 +60,56 @@ Tree structure of the template:
 ├── Dockerfile
 ├── Makefile
 ├── README.md
+├── assets
+│   └── certs
 ├── docker-compose.yaml
 ├── docker-recycle.sh
 ├── goapp
-│   ├── assets
+│   ├── api
+│   │   ├── handlers
+│   │   │   └── health.go
+│   │   └── routes
+│   │       └── routes.go
 │   ├── build
 │   │   └── goapp
 │   ├── cmd
+│   │   ├── ginapi
+│   │   │   └── main.go
 │   │   └── goapp
 │   │       └── main.go
-│   ├── configs
-│   │   └── config.yaml
 │   ├── docs
+│   │   ├── docs.go
+│   │   ├── swagger.json
+│   │   └── swagger.yaml
 │   ├── go.mod
 │   ├── go.sum
 │   ├── internal
 │   │   ├── config
 │   │   │   └── config.go
-│   │   ├── logging
-│   │   │   └── logging.go
 │   │   └── models
 │   ├── pkg
-│   └── scripts
+│   │   ├── clients
+│   │   │   └── clients.go
+│   │   ├── env
+│   │   │   └── env.go
+│   │   ├── logging
+│   │   │   └── logging.go
+│   │   └── otel
+│   │       └── otel.go
+│   ├── scripts
+│   ├── tests
+│   │   ├── helpers
+│   │   └── unit
+│   └── web
+│       ├── static
+│       └── templates
 ├── logs
-│   ├── app.log
+│   └── app.log
 │   └── error.log
+├── monitoring
+│   ├── grafana
+│   └── prometheus
 └── rename_app.sh
 
-15 directories, 15 files
+31 directories, 22 files
 ```
