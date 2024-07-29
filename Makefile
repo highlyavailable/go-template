@@ -17,6 +17,7 @@ ifneq (,$(wildcard $(ENV_PATH)))
 endif
 
 all: env swagger build run
+first: env tidy swaggo swagger build run
 
 env:
 	@echo "-> Checking for .env file"
@@ -32,6 +33,10 @@ env:
 		echo ".env file found"; \
 	fi
 	set -a; source $(ENV_PATH); set +a
+
+swaggo:
+	@echo "-> Getting swaggo"
+	$(CD_APP) go get -u github.com/swaggo/swag
 
 swagger:
 	@echo "-> Generating swagger docs"
