@@ -9,7 +9,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-var logger *zap.Logger
+var Logger *zap.Logger
 
 type LoggerConfig struct {
 	Environment      string // "production" OR "development", default is "development"
@@ -23,7 +23,7 @@ type LoggerConfig struct {
 	ErrLogPath       string // Path to the error log file
 }
 
-// InitLogger initializes the logger corresponding to the environment
+// InitLogger initializes the Logger corresponding to the environment
 // value ENV=production OR development. The logs are written to logs/app.log
 // and logs/error.log. The logs are rotated based on the configuration
 // provided to lumberjack.Logger.
@@ -62,21 +62,21 @@ func InitLogger(newLogger LoggerConfig) {
 		}
 	}
 
-	// Build the zap logger configuration
+	// Build the zap Logger configuration
 	var config zap.Config
 
-	// Set the zap logger default configuration based on the environment
+	// Set the zap Logger default configuration based on the environment
 	if newLogger.Environment == "production" {
 		config = zap.NewProductionConfig()
 	} else {
 		config = zap.NewDevelopmentConfig()
 	}
 
-	// Customize the logger configuration
+	// Customize the Logger configuration
 	config.EncoderConfig = zapcore.EncoderConfig{
 		TimeKey:        "time",
 		LevelKey:       "level",
-		NameKey:        "logger",
+		NameKey:        "Logger",
 		CallerKey:      "caller",
 		MessageKey:     "msg",
 		FunctionKey:    "function",
@@ -89,7 +89,7 @@ func InitLogger(newLogger LoggerConfig) {
 		EncodeName:     zapcore.FullNameEncoder,
 	}
 
-	// Create new zap logger with synced cores for app and error logs
+	// Create new zap Logger with synced cores for app and error logs
 	appLogCore := zapcore.NewCore(
 		zapcore.NewJSONEncoder(config.EncoderConfig),
 		zapcore.AddSync(lumberjackLogger),
@@ -118,29 +118,21 @@ func InitLogger(newLogger LoggerConfig) {
 	core := zapcore.NewTee(cores...)
 
 	if newLogger.EnableStackTrace {
-		// Create a new logger with the zap logger configuration
-		logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel))
+		// Create a new Logger with the zap Logger configuration
+		Logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel))
 	} else {
-		// Create a new logger with the zap logger configuration
-		logger = zap.New(core, zap.AddCaller())
+		// Create a new Logger with the zap Logger configuration
+		Logger = zap.New(core, zap.AddCaller())
 	}
 
-	zap.ReplaceGlobals(logger) // Replace zap's global logger
-	// logger.Info("Logger config", zap.Any("config", newLogger))
-}
-
-func Info(msg string, fields ...zap.Field) {
-	logger.Info(msg, fields...)
-}
-
-func Error(msg string, fields ...zap.Field) {
-	logger.Error(msg, fields...)
+	zap.ReplaceGlobals(Logger) // Replace zap's global Logger
+	// Logger.Info("Logger config", zap.Any("config", newLogger))
 }
 
 // Writes number entries + 1 to the Error log to test log rotation
 func TestRotation(entries int) {
-	Info("Dumping " + string(entries) + " entries to the log")
+	Logger.Info("Dumping " + string(entries) + " entries to the log")
 	for i := 0; i < entries; i++ {
-		Error("This is an error message")
+		Logger.Error("This is an error message")
 	}
 }

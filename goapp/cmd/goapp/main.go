@@ -36,5 +36,5 @@ func main() {
 	shutdownMeter := otel.InitMeter()
 	defer shutdownMeter()
 
-	logging.Info("GoApp is running")
+	logging.Logger.Info("GoApp is running")
 }
