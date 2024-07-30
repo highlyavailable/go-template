@@ -10,29 +10,35 @@ PATH_TO_DOCKER_RECYCLE=./docker-recycle.sh
 # Set the path to the .env file, defaulting to the current directory if not set
 ENV_PATH ?= .env
 
+all: env swagger build run
+first: env tidy swaggo swagger build run
+
 # Load environment variables
 ifneq (,$(wildcard $(ENV_PATH)))
     include $(ENV_PATH)
     export
 endif
 
-all: env swagger build run
-first: env tidy swaggo swagger build run
 
 env:
 	@echo "-> Checking for .env file"
 	@if [ ! -f $(ENV_PATH) ]; then \
-        echo ".env file not found, creating one"; \
-        touch $(ENV_PATH); \
-        echo "APP_NAME=$(APP_NAME)" >> $(ENV_PATH); \
-        echo "ENV=development" >> $(ENV_PATH); \
-        echo "PORT=8080" >> $(ENV_PATH); \
-        echo "LOG_LEVEL=debug" >> $(ENV_PATH); \
-        echo ".env file created"; \
+		echo ".env file not found, creating one"; \
+		touch $(ENV_PATH); \
+		echo "APP_NAME=$(APP_NAME)" >> $(ENV_PATH); \
+		echo "ENV=development" >> $(ENV_PATH); \
+		echo "PORT=8080" >> $(ENV_PATH); \
+		echo "LOG_LEVEL=debug" >> $(ENV_PATH); \
+		echo ".env file created"; \
 	else \
 		echo ".env file found"; \
 	fi
-	set -a; source $(ENV_PATH); set +a
+
+# Export variables from .env file
+ifneq (,$(wildcard $(ENV_PATH)))
+    include $(ENV_PATH)
+    export $(shell sed 's/=.*//' $(ENV_PATH))
+endif
 
 swaggo:
 	@echo "-> Getting swaggo"
