@@ -8,7 +8,9 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
-	"go.opentelemetry.io/otel/sdk/metric"
+
+	"go.opentelemetry.io/otel/metric"
+	sdk_metric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
@@ -31,9 +33,9 @@ func InitMeter() func() {
 		log.Fatal(err)
 	}
 
-	meterProvider := metric.NewMeterProvider(
-		metric.WithReader(exporter),
-		metric.WithResource(initResource()),
+	meterProvider := sdk_metric.NewMeterProvider(
+		sdk_metric.WithReader(exporter),
+		sdk_metric.WithResource(initResource()),
 	)
 	otel.SetMeterProvider(meterProvider)
 
@@ -59,4 +61,26 @@ func InitTracer() func() {
 	return func() {
 		_ = tracerProvider.Shutdown(context.Background())
 	}
+}
+
+// InitCustomCounter initializes a custom counter and returns it
+func InitCustomCounter(counterName string) metric.Int64Counter {
+	// Access the goapp meter
+	meter := otel.GetMeterProvider().Meter("goapp")
+
+	// Create a counter
+	counter, err := meter.Int64Counter("custom_counter")
+	if err != nil {
+		log.Fatalf("Failed to create counter: %v", err)
+	}
+
+	// Record a metric
+	counter.Add(context.Background(), 0)
+
+	return counter
+}
+
+func UpdateCounter(counter metric.Int64Counter, value int64) {
+	// Record a metric
+	counter.Add(context.Background(), value)
 }

@@ -5,9 +5,11 @@ import (
 	"goapp/api/routes"
 	"goapp/pkg/env"
 	"goapp/pkg/logging"
-	"goapp/pkg/otel"
+	custotel "goapp/pkg/otel"
 	"log"
 	"os"
+
+	// Import global package
 
 	_ "goapp/docs" // Import generated docs
 
@@ -51,10 +53,14 @@ func main() {
 	// logging.TestRotation(1e4)     // Test log rotation by dumping 10k error msgs
 
 	// Initialize OTel Tracer and Meter
-	shutdownTracer := otel.InitTracer()
+	shutdownTracer := custotel.InitTracer()
 	defer shutdownTracer()
-	shutdownMeter := otel.InitMeter()
+	shutdownMeter := custotel.InitMeter()
 	defer shutdownMeter()
+
+	// Init custom counter
+	counter := custotel.InitCustomCounter("custom_counter")
+	custotel.UpdateCounter(counter, 100)
 
 	// Initialize the router
 	router := routes.SetupRouter() // Create all routes
