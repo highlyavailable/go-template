@@ -2,14 +2,34 @@ package main
 
 import (
 	"fmt"
+	"goapp/api/routes"
 	"goapp/pkg/env"
 	"goapp/pkg/logging"
 	"goapp/pkg/otel"
+	"log"
 	"os"
 
 	_ "goapp/docs" // Import generated docs
+
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.uber.org/zap"
 )
 
+// Import generated docs
+
+// @title GoApp Gin Rest API
+// @version 1.0
+// @description This is a sample server GoApp server.
+// @termsOfService <url>
+
+// @contact.name Peter Bryant
+// @contact.url <url>
+// @contact.email <email>
+// @license.name Apache 2.0
+// @license.url <url>
+
+// @host localhost:8080
+// @BasePath /
 func main() {
 	// List of required environment variables
 	requiredVars := []string{"ENV_PATH", "ENV", "LOG_DIR_PATH", "CERT_DIR_PATH"}
@@ -36,5 +56,14 @@ func main() {
 	shutdownMeter := otel.InitMeter()
 	defer shutdownMeter()
 
-	logging.Logger.Info("GoApp is running")
+	// Initialize the router
+	router := routes.SetupRouter() // Create all routes
+	logging.Logger.Info("Server started", zap.String("port", "8080"))
+	router.Use(otelgin.Middleware("goapp")) // Add OpenTelemetry middleware
+
+	// Start the server
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("Failed to run server: %v", err)
+	}
+
 }

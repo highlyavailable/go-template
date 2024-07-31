@@ -10,7 +10,16 @@ const docTemplate = `{
     "info": {
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
-        "contact": {},
+        "termsOfService": "\u003curl\u003e",
+        "contact": {
+            "name": "Peter Bryant",
+            "url": "\u003curl\u003e",
+            "email": "\u003cemail\u003e"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "\u003curl\u003e"
+        },
         "version": "{{.Version}}"
     },
     "host": "{{.Host}}",
@@ -44,12 +53,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "GoApp Gin Rest API",
+	Description:      "This is a sample server GoApp server.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 }

@@ -17,7 +17,7 @@ import (
 func SetupRouter() *gin.Engine {
 	router := gin.Default()
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler)) // Swagger endpoint
-	logging.Info("Swagger docs available at http://localhost:8080/swagger/index.html")
+	logging.Logger.Info("Swagger docs available at http://localhost:8080/swagger/index.html")
 
 	// Prometheus metrics endpoint
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
