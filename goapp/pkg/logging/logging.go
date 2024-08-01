@@ -134,6 +134,10 @@ func Fatal(message string, fields ...zap.Field) {
 	zapLog.Fatal(message, fields...)
 }
 
+func Printf(message string, args ...interface{}) {
+	zapLog.Info(fmt.Sprintf(message, args...))
+}
+
 // Writes number entries + 1 to the Error log to test log rotation
 func TestRotation(entries int) {
 	zapLog.Info(fmt.Sprintf("Dumping %d entries to the log", entries))

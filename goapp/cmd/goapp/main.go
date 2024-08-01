@@ -14,14 +14,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// GO_APP_APP_NAME=goapp
-// GO_APP_PROJECT_ROOT=/Users/PeterWBryant/Repos/go-template
-// GO_APP_ENV_PATH=${PROJECT_ROOT}/.env
-// GO_APP_LOG_DIR_PATH=${PROJECT_ROOT}/logs
-// GO_APP_CERT_DIR_PATH=${PROJECT_ROOT}/assets/certs
-// GO_APP_ENV=development
-// GO_APP_PORT=8080
-
 type Specification struct {
 	AppName     string `envconfig:"GO_APP_APP_NAME" default:"goapp"`
 	ProjectRoot string `envconfig:"GO_APP_PROJECT_ROOT" default:"/Users/PeterWBryant/Repos/go-template"`
@@ -72,6 +64,8 @@ func main() {
 	}
 	logging.InitLogger(loggerConf)
 	// logging.TestRotation(1e4)     // Test log rotation by dumping 10k error msgs
+
+	logging.Printf("this is a test %d", 123)
 
 	// Initialize OTel Tracer and Meter
 	shutdownTracer := otel.InitTracer()
