@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -9,25 +10,14 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-var Logger *zap.Logger
-
-type LoggerConfig struct {
-	Environment      string // "production" OR "development", default is "development"
-	WriteStdout      bool   // Write logs to stdout
-	EnableStackTrace bool   // Enable stack trace logging
-	MaxSize          int    // Max size in megabytes before log is rotated
-	MaxBackups       int    // Max number of old log files to keep
-	MaxAge           int    // Max number of days to retain old log files
-	Compress         bool   // Compress the rotated log files (generates .gz files)
-	AppLogPath       string // Path to the app log file
-	ErrLogPath       string // Path to the error log file
-}
+var zapLog *zap.Logger
 
 // InitLogger initializes the Logger corresponding to the environment
 // value ENV=production OR development. The logs are written to logs/app.log
 // and logs/error.log. The logs are rotated based on the configuration
 // provided to lumberjack.Logger.
 func InitLogger(newLogger LoggerConfig) {
+
 	// Use lumberjack for app log rotation
 	lumberjackLogger := &lumberjack.Logger{
 		Filename:   newLogger.AppLogPath, // Log file path
@@ -119,20 +109,36 @@ func InitLogger(newLogger LoggerConfig) {
 
 	if newLogger.EnableStackTrace {
 		// Create a new Logger with the zap Logger configuration
-		Logger = zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel))
+		zapLog = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1), zap.AddStacktrace(zap.ErrorLevel))
 	} else {
 		// Create a new Logger with the zap Logger configuration
-		Logger = zap.New(core, zap.AddCaller())
+		zapLog = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 	}
 
-	zap.ReplaceGlobals(Logger) // Replace zap's global Logger
-	// Logger.Info("Logger config", zap.Any("config", newLogger))
+	zap.ReplaceGlobals(zapLog) // Replace zap's global Logger
+	Info("Logger config", zap.Any("config", newLogger))
+}
+
+func Info(message string, fields ...zap.Field) {
+	zapLog.Info(message, fields...)
+}
+
+func Debug(message string, fields ...zap.Field) {
+	zapLog.Debug(message, fields...)
+}
+
+func Error(message string, fields ...zap.Field) {
+	zapLog.Error(message, fields...)
+}
+
+func Fatal(message string, fields ...zap.Field) {
+	zapLog.Fatal(message, fields...)
 }
 
 // Writes number entries + 1 to the Error log to test log rotation
 func TestRotation(entries int) {
-	Logger.Info("Dumping " + string(entries) + " entries to the log")
+	zapLog.Info(fmt.Sprintf("Dumping %d entries to the log", entries))
 	for i := 0; i < entries; i++ {
-		Logger.Error("This is an error message")
+		zapLog.Error("This is an error message")
 	}
 }

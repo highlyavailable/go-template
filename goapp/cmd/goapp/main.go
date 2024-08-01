@@ -38,7 +38,7 @@ func main() {
 	env.LoadEnv(requiredVars) // Panic if not found
 
 	// Init zap logger
-	newLogger := logging.LoggerConfig{
+	loggerConf := logging.LoggerConfig{
 		Environment:      os.Getenv("ENV"),
 		WriteStdout:      true,
 		EnableStackTrace: false,
@@ -49,7 +49,7 @@ func main() {
 		AppLogPath:       fmt.Sprintf("%s/app.log", os.Getenv("LOG_DIR_PATH")),
 		ErrLogPath:       fmt.Sprintf("%s/error.log", os.Getenv("LOG_DIR_PATH")),
 	}
-	logging.InitLogger(newLogger)
+	logging.InitLogger(loggerConf)
 	// logging.TestRotation(1e4)     // Test log rotation by dumping 10k error msgs
 
 	// Initialize OTel Tracer and Meter
@@ -64,7 +64,7 @@ func main() {
 
 	// Initialize the router
 	router := routes.SetupRouter() // Create all routes
-	logging.Logger.Info("Server started", zap.String("port", "8080"))
+	logging.Info("Server started", zap.String("port", "8080"))
 	router.Use(otelgin.Middleware("goapp")) // Add OpenTelemetry middleware
 
 	// Start the server

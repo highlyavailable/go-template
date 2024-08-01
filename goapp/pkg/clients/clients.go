@@ -31,7 +31,7 @@ func NewInsecureClient(urlForRequest string) (*http.Client, error) {
 
 	err := testClient(client, urlForRequest)
 	if err != nil {
-		logging.Logger.Error("Error testing client", zap.Error(err))
+		logging.Error("Error testing client", zap.Error(err))
 		fmt.Println("Error testing client:", err)
 		return nil, err
 	}
@@ -74,7 +74,7 @@ func NewSecureClient(clientConfig SecureClientConfig) (*http.Client, error) {
 
 	err = testClient(client, clientConfig.URLForConnTest)
 	if err != nil {
-		logging.Logger.Error("Error testing client", zap.Error(err))
+		logging.Error("Error testing client", zap.Error(err))
 		fmt.Println("Error testing client:", err)
 		return nil, err
 	}
@@ -90,14 +90,14 @@ func testClient(c *http.Client, urlForRequest string) error {
 	// assert valid URL
 	_, err := url.ParseRequestURI(urlForRequest)
 	if err != nil {
-		logging.Logger.Error("Error parsing URL", zap.Error(err))
+		logging.Error("Error parsing URL", zap.Error(err))
 		return err
 	}
 
 	// Create a new insecure client
 	resp, err := c.Get(urlForRequest)
 	if err != nil {
-		logging.Logger.Error("Error making request", zap.Error(err))
+		logging.Error("Error making request", zap.Error(err))
 		return err
 	}
 	defer resp.Body.Close()
@@ -105,6 +105,6 @@ func testClient(c *http.Client, urlForRequest string) error {
 		return fmt.Errorf("Response status code: %d", resp.StatusCode)
 	}
 
-	logging.Logger.Info("Client test successful")
+	logging.Info("Client test successful")
 	return nil
 }
