@@ -12,10 +12,9 @@ import (
 
 var zapLog *zap.Logger
 
-// InitLogger initializes the Logger corresponding to the environment
-// value ENV=production OR development. The logs are written to logs/app.log
-// and logs/error.log. The logs are rotated based on the configuration
-// provided to lumberjack.Logger.
+// InitLogger initializes the zapLog zap.Logger corresponding to the environment
+// value ENV=production OR development. The LoggerConfig struct is used to configure
+// rotation and retention of log files as well as its format and output destination.
 func InitLogger(newLogger LoggerConfig) {
 
 	// Use lumberjack for app log rotation
