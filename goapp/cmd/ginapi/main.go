@@ -2,12 +2,16 @@ package main
 
 import (
 	"fmt"
+	"goapp/api/routes"
 	_ "goapp/docs" // Import generated docs
 	"goapp/pkg/logging"
+	"goapp/pkg/otel"
 	"log"
 	"path/filepath"
 
 	"github.com/kelseyhightower/envconfig"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+	"go.uber.org/zap"
 )
 
 type Specification struct {
@@ -60,5 +64,25 @@ func main() {
 	}
 	logging.InitLogger(loggerConf)
 	// logging.TestRotation(1e4)     // Test log rotation by dumping 10k error msgs
+
+	// Initialize OTel Tracer and Meter
+	shutdownTracer := otel.InitTracer()
+	defer shutdownTracer()
+	shutdownMeter := otel.InitMeter()
+	defer shutdownMeter()
+
+	// Init custom counter
+	counter := otel.InitCustomCounter("custom_counter")
+	otel.UpdateCounter(counter, 100)
+
+	// Initialize the router
+	router := routes.SetupRouter() // Create all routes
+	logging.Info("Server started", zap.Int("port", s.Port))
+	router.Use(otelgin.Middleware("goapp")) // Add OpenTelemetry middleware
+
+	// Start the server
+	if err := router.Run(":8080"); err != nil {
+		log.Fatalf("Failed to run server: %v", err)
+	}
 
 }

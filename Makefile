@@ -25,11 +25,6 @@ env:
 	@if [ ! -f $(ENV_PATH) ]; then \
 		echo ".env file not found, creating one"; \
 		touch $(ENV_PATH); \
-		echo "APP_NAME=$(APP_NAME)" >> $(ENV_PATH); \
-		echo "ENV=development" >> $(ENV_PATH); \
-		echo "PORT=8080" >> $(ENV_PATH); \
-		echo "LOG_LEVEL=debug" >> $(ENV_PATH); \
-		echo ".env file created"; \
 	else \
 		echo ".env file found"; \
 	fi
