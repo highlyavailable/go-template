@@ -12,6 +12,7 @@ ENV_PATH ?= .env
 
 all: env swagger build run
 first: env tidy swaggo swagger build run
+monitors: env graf-prom
 
 # Load environment variables
 ifneq (,$(wildcard $(ENV_PATH)))
@@ -39,6 +40,10 @@ ifneq (,$(wildcard $(ENV_PATH)))
     include $(ENV_PATH)
     export $(shell sed 's/=.*//' $(ENV_PATH))
 endif
+
+graf-prom:
+	@echo "-> Starting Grafana and Prometheus"
+	docker compose -f monitoring/docker-compose.yaml up -d
 
 swaggo:
 	@echo "-> Getting swaggo"

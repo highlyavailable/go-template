@@ -87,6 +87,7 @@ The Makefile in the root of the project provides a set of commands to help with 
 #### Miscellaneous
 
 - **`tidy`**: Tidy will clean up the Go module cache in the Go module directory.
+- **`monitors`**: Starts the monitoring stack with Prometheus and Grafana.
 
 
 Running `make first` is recommended to get your project set up and ready for development.
@@ -108,66 +109,69 @@ docker run -it --entrypoint /bin/sh go-app
 ## File Structure
 
 ```bash
+> tree
 .
 ├── Dockerfile
 ├── Makefile
 ├── README.md
 ├── assets
-│   └── certs
+│   └── certs
 ├── docker-compose.yaml
 ├── docker-recycle.sh
 ├── goapp
-│   ├── api
-│   │   ├── handlers
-│   │   │   └── health.go
-│   │   └── routes
-│   │       └── routes.go
-│   ├── build
-│   │   └── goapp
-│   ├── cmd
-│   │   └── goapp
-│   │       └── main.go
-│   ├── docs
-│   │   ├── docs.go
-│   │   ├── swagger.json
-│   │   └── swagger.yaml
-│   ├── go.mod
-│   ├── go.sum
-│   ├── internal
-│   │   └── config
-│   │       └── config.go
-│   ├── pkg
-│   │   ├── clients
-│   │   │   └── clients.go
-│   │   ├── db
-│   │   │   ├── kafka
-│   │   │   │   ├── example.go
-│   │   │   │   ├── kafka.go
-│   │   │   │   └── model.go
-│   │   │   └── postgres
-│   │   │       ├── example.go
-│   │   │       ├── model.go
-│   │   │       └── postgres.go
-│   │   ├── logging
-│   │   │   ├── logging.go
-│   │   │   └── model.go
-│   │   └── otel
-│   │       └── otel.go
-│   ├── scripts
-│   ├── tests
-│   │   ├── helpers
-│   │   └── unit
-│   └── web
-│       ├── static
-│       └── templates
+│   ├── api
+│   │   ├── handlers
+│   │   │   └── health.go
+│   │   └── routes
+│   │       └── routes.go
+│   ├── build
+│   │   └── goapp
+│   ├── cmd
+│   │   └── goapp
+│   │       └── main.go
+│   ├── docs
+│   │   ├── docs.go
+│   │   ├── swagger.json
+│   │   └── swagger.yaml
+│   ├── go.mod
+│   ├── go.sum
+│   ├── internal
+│   │   └── config
+│   │       └── config.go
+│   ├── pkg
+│   │   ├── clients
+│   │   │   └── clients.go
+│   │   ├── db
+│   │   │   ├── kafka
+│   │   │   │   ├── example.go
+│   │   │   │   ├── kafka.go
+│   │   │   │   └── model.go
+│   │   │   └── postgres
+│   │   │       ├── example.go
+│   │   │       ├── model.go
+│   │   │       └── postgres.go
+│   │   ├── logging
+│   │   │   ├── logging.go
+│   │   │   └── model.go
+│   │   └── otel
+│   │       └── otel.go
+│   ├── scripts
+│   ├── tests
+│   │   ├── helpers
+│   │   └── unit
+│   └── web
+│       ├── static
+│       └── templates
 ├── logs
-│   └── app.log
+│   └── app.log
 ├── monitoring
-│   ├── datasources
-│   │   └── datasources.yml
-│   ├── docker-compose.yaml
-│   └── prometheus.yaml
+│   ├── datasources
+│   │   └── datasources.yaml
+│   ├── docker-compose.yaml
+│   └── prometheus.yaml
 └── rename_app.sh
+
+30 directories, 30 files
 ```
 
 ## Directory Overview
@@ -216,4 +220,4 @@ The application uses Zap for structured logging with log rotation and retention.
 
 ## Monitoring
 
-Prometheus is used for metrics collection and Grafana for visualization. The monitoring setup is available in the `monitoring` directory.
+Prometheus is used for metrics collection and Grafana for visualization. The monitoring setup is available in the `monitoring` directory, just run `docker compose up` to start the monitoring stack which includes a single Prometheus instance and a Grafana instance. The Prometheus configuration is available in `monitoring/prometheus.yaml`, and the Grafana datasource configuration to pull metrics from Prometheus is available in `monitoring/datasources/datasources.yaml`.
