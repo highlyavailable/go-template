@@ -107,7 +107,7 @@ docker run -it --entrypoint /bin/sh go-app
 
 ## File Structure
 
-```
+```bash
 .
 ├── Dockerfile
 ├── Makefile
@@ -161,14 +161,13 @@ docker run -it --entrypoint /bin/sh go-app
 │       ├── static
 │       └── templates
 ├── logs
-│   ├── app.log
-│   ├── error.log
+│   └── app.log
 ├── monitoring
-│   ├── grafana
-│   └── prometheus
+│   ├── datasources
+│   │   └── datasources.yml
+│   ├── docker-compose.yaml
+│   └── prometheus.yaml
 └── rename_app.sh
-
-31 directories, 22 files
 ```
 
 ## Directory Overview
