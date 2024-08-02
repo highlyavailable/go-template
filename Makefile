@@ -20,7 +20,6 @@ ifneq (,$(wildcard $(ENV_PATH)))
     export
 endif
 
-
 env:
 	@echo "-> Checking for .env file"
 	@if [ ! -f $(ENV_PATH) ]; then \
