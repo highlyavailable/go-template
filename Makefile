@@ -1,87 +1,82 @@
-APP_NAME=goapp
-CONTAINER_NAME=$(APP_NAME)
-IMAGE_NAME=$(APP_NAME)
-CD_APP=cd $(APP_NAME) &&
+APP_NAME := goapp
+CONTAINER_NAME := $(APP_NAME)
+IMAGE_NAME := $(APP_NAME)
 
-BINARY_PATH=./build/$(APP_NAME)
-ENTRY_POINT=./cmd/$(APP_NAME)
-PATH_TO_DOCKER_RECYCLE=./docker-recycle.sh
+BINARY_PATH := $(APP_NAME)/build/$(APP_NAME)
+ENTRY_POINT := $(APP_NAME)/cmd/$(APP_NAME)
+PATH_TO_DOCKER_RECYCLE := ./docker-recycle.sh
 
-# Set the path to the .env file, defaulting to the current directory if not set
-ENV_PATH ?= .env
-
-all: env swagger build run
-first: env tidy swaggo swagger build run
-monitors: env graf-prom
+ENV_FILE ?= .env
 
 # Load environment variables
-ifneq (,$(wildcard $(ENV_PATH)))
-    include $(ENV_PATH)
-    export
+ifneq (,$(wildcard $(ENV_FILE)))
+    include $(ENV_FILE)
+    export $(shell sed 's/=.*//' $(ENV_FILE))
 endif
+
+# Define colors
+CYAN := \033[36m
+RESET := \033[0m
+
+# Define a function for prettier logging
+define log
+	@echo "$(CYAN)$(1)$(RESET)"
+endef
 
 env:
-	@echo "-> Checking for .env file"
-	@if [ ! -f $(ENV_PATH) ]; then \
-		echo ".env file not found, creating one"; \
-		touch $(ENV_PATH); \
+	$(call log,Checking for .env file)
+	@if [ ! -f $(ENV_FILE) ]; then \
+		echo "$(CYAN).env file not found, creating one$(RESET)"; \
+		touch $(ENV_FILE); \
 	else \
-		echo ".env file found"; \
+		echo "$(CYAN).env file found$(RESET)"; \
 	fi
 
-# Export variables from .env file
-ifneq (,$(wildcard $(ENV_PATH)))
-    include $(ENV_PATH)
-    export $(shell sed 's/=.*//' $(ENV_PATH))
-endif
+tidy:
+	$(call log,Running go mod tidy)
+	cd $(APP_NAME) && go mod tidy
 
-graf-prom:
-	@echo "-> Starting Grafana and Prometheus"
-	docker compose -f monitoring/docker-compose.yaml up -d
+lint:
+	$(call log,Running golint)
+	cd $(APP_NAME) && golint ./...
 
-swaggo:
-	@echo "-> Getting swaggo"
-	$(CD_APP) go get -u github.com/swaggo/swag
+test:
+	$(call log,Running tests)
+	cd $(APP_NAME) && go test -v ./...
+
+test-coverage:
+	$(call log,Running tests with coverage)
+	cd $(APP_NAME) && go test -v -coverprofile=coverage.out ./...
+	cd $(APP_NAME) && go tool cover -html=coverage.out -o coverage.html
+
+security-scan:
+	$(call log,Running security scan with gosec)
+	cd $(APP_NAME) && gosec ./...
 
 swagger:
-	@echo "-> Generating swagger docs"
-	@echo "Working directory: $(CD_APP)"
-	$(CD_APP) swag init -g $(ENTRY_POINT)/main.go
+	$(call log,Generating swagger docs)
+	cd $(APP_NAME) && swag init -g cmd/$(APP_NAME)/main.go
 
 build:
-	@echo "-> Building $(APP_NAME)"
-	$(CD_APP) go build -o $(BINARY_PATH) $(ENTRY_POINT)
+	$(call log,Building $(APP_NAME))
+	cd $(APP_NAME) && go build -o build/$(APP_NAME) cmd/$(APP_NAME)/main.go
 
 build-verbose:
-	@echo "-> Building $(APP_NAME)"
-	$(CD_APP) go build -v -o $(BINARY_PATH) $(ENTRY_POINT)
-
-build-linux:
-	@echo "-> Building $(APP_NAME) for linux"
-	$(CD_APP) GOOS=linux GOARCH=amd64 go build -o $(BINARY_PATH) $(ENTRY_POINT)
-
-build-windows:
-	@echo "-> Building $(APP_NAME) for windows"
-	$(CD_APP) GOOS=windows GOARCH=amd64 go build -o $(BINARY_PATH).exe $(ENTRY_POINT)
-
-build-race:
-	@echo "-> Building $(APP_NAME) with race detector"
-	$(CD_APP) go build -race -o $(BINARY_PATH) $(ENTRY_POINT)
+	$(call log,Building $(APP_NAME) with verbose output)
+	cd $(APP_NAME) && go build -v -o build/$(APP_NAME) cmd/$(APP_NAME)/main.go
 
 run:
-	@echo "-> Running $(APP_NAME)"
-	$(CD_APP) chmod +x $(BINARY_PATH)
-	$(CD_APP) $(BINARY_PATH)
+	$(call log,Running $(APP_NAME))
+	chmod +x $(BINARY_PATH)
+	$(BINARY_PATH)
 
-docker-recycle:
-	@echo "-> Recycle docker containers"
-	chmod +x $(PATH_TO_DOCKER_RECYCLE)
-	$(PATH_TO_DOCKER_RECYCLE)
+monitors:
+	$(call log,Starting monitoring stack)
+	docker-compose -f monitoring/docker-compose.yml up -d
 
-docker-exec:
-	@echo "-> Executing shell in $(CONTAINER_NAME)"
-	docker run -it --entrypoint /bin/sh -e ENV_PATH=$(CONTAINER_ENV_PATH) $(CONTAINER_NAME)
+prevalidate: env lint tidy
+all: prevalidate build run
+ci: prevalidate test-coverage build-verbose run
+gin: prevalidate swagger build run
 
-tidy:
-	@echo "-> Running go mod tidy"
-	$(CD_APP) go mod tidy
+.PHONY: env lint test test-coverage security-scan swagger build build-verbose run prevalidate all ci

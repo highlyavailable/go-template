@@ -115,7 +115,6 @@ func InitLogger(newLogger LoggerConfig) {
 	}
 
 	zap.ReplaceGlobals(zapLog) // Replace zap's global Logger
-	Info("Logger config", zap.Any("config", newLogger))
 }
 
 func Info(message string, fields ...zap.Field) {

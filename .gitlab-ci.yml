@@ -1,0 +1,43 @@
+image: golang:1.21
+
+stages:
+  - test
+  - build
+  - deploy
+
+variables:
+  GOPATH: $CI_PROJECT_DIR/.go
+
+cache:
+  paths:
+    - .go/pkg/mod/
+
+before_script:
+  - mkdir -p .go
+
+test:
+  stage: test
+  script:
+    - make lint
+    - make test
+    - make security-scan
+    - make test-coverage
+  artifacts:
+    paths:
+      - goapp/coverage.html
+
+build:
+  stage: build
+  script:
+    - make build
+  artifacts:
+    paths:
+      - goapp/build/goapp
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploy to production server"
+    # Add your deployment steps here
+  only:
+    - main
