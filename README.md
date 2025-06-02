@@ -1,223 +1,215 @@
 # Go Template Project
 
+A ready-to-use Go template with DI, logging, configuration, database, HTTP server, observability, testing, and Docker support.
+
 ## Overview
 
-Fork for quick creation of new Go applications. It includes a structured directory layout with a Makefile for build automation, `envconfig` for environment configuration/management, `Zap` and `lumberjack` for structured logging with rotation and retention, `OpenTelemetry` for observability and tracing, `Prometheus` for metrics collection and monitoring. Includes a Dockerfile and docker-compose.yaml for containerization. Contains a basic HTTP Gin server with health check and Swagger documentation, with additional integrations for Kafka, Postgres, MongoDB, and Redis.
+This template provides a solid foundation for building Go applications with:
+
+- **Dependency Injection**: Clean, testable architecture with proper DI container
+- **Structured Logging**: Both structured and unstructured logging with Zap
+- **Configuration Management**: Environment-based configuration with sensible defaults
+- **Database Integration**: PostgreSQL and Kafka support with interfaces
+- **HTTP Server**: Gin-based REST API with health checks and Swagger docs
+- **Observability**: OpenTelemetry tracing and Prometheus metrics
+- **Testing**: Comprehensive test coverage with proper mocking
+- **Docker Support**: Production-ready containerization
 
 ## Getting Started
 
 ### Prerequisites
 
-- Go 1.21 (specified in go.mod)
-- make installed
-- Docker (optional)
+- Go 1.21+
+- Docker (optional, for databases and monitoring)
+- Make (for build automation)
 
-### Setup
+### Configuration
 
-1. **Clone the Repository**
+The application uses environment variables with defaults:
 
-   ```bash
-   git clone <repository-url>
-   cd <repository-name>
-   ```
+```bash
+# Application
+GO_APP_APP_NAME=myapp
+GO_APP_ENV=development
+GO_APP_PORT=8080
 
-2. **Install Dependencies**
+# Logging
+LOGGER_WRITE_STDOUT=true
+LOGGER_ENABLE_STACK_TRACE=false
+LOGGER_APP_LOG_PATH=./logs/app.log
+LOGGER_ERR_LOG_PATH=./logs/error.log
+```
 
-   Install the project dependencies using `go mod`:
+## Architecture
 
-   ```bash
-   cd goapp
-   go mod tidy
-   ```
+### Project Structure
 
-3. **Rename the Application**
+```
+goapp/
+├── api/                    # HTTP layer
+│   ├── handlers/          # HTTP handlers with DI
+│   └── routes/            # Route definitions
+├── cmd/                   # Application entrypoints
+│   ├── goapp/            # Main HTTP server
+├── internal/              # Internal packages (not importable)
+│   ├── config/           # Configuration management
+│   ├── container/        # Dependency injection container
+│   ├── db/              # Database implementations
+│   │   ├── postgres/    # PostgreSQL client
+│   │   └── kafka/       # Kafka client
+│   ├── logging/         # Logging implementation
+│   └── observability/   # OpenTelemetry setup
+├── pkg/                  # Public packages (reusable)
+│   └── clients/         # HTTP clients
+└── docs/                # Swagger documentation
+```
 
-   Update the application name using the `rename_app.sh` script.
+### Guide
 
-   ```bash
-   ./rename_app.sh <old_app_name> <new_app_name>
-   # Example
-   ./rename_app.sh goapp myapp
-   ```
+- **pkg/ vs internal/**: `pkg/` contains reusable libraries, `internal/` contains app-specific code
+- **Interface-driven**: All major components implement interfaces for easy testing
+- **Dependency Injection**: No global state, all dependencies are injected
+- **Configuration**: Single source of truth with environment variable support
+- **Error Handling**: Proper error propagation with context
 
-4. **Set Up Environment Variables**
+## Features
 
-   Ensure that required environment variables are set. Refer to the `.env.example` file for reference.
+### Logging
 
+The logging package supports both structured and unstructured logging:
 
-### Makefile Targets
+```go
+// Structured logging (recommended)
+logger.Info("User created", 
+    logging.String("user_id", "123"),
+    logging.String("email", "user@example.com"))
 
-The Makefile in the root of the project provides a set of commands to help with building, running, and managing the application. Running `make first` will set up your project by creating necessary files and installing dependencies.
+// Unstructured logging (for simple cases)
+logger.Infof("User %s created with email %s", userID, email)
 
-#### Setup
+// Context logging
+userLogger := logger.With(logging.String("user_id", userID))
+userLogger.Info("Processing user request")
+```
 
-- **`first`**: Performs an initial setup by:
-  - Creating the `.env` file if it doesn’t exist.
-  - Installing Swaggo for Swagger documentation.
-  - Generating Swagger documentation.
-  - Building the application.
-  - Running the application.
+### Database
 
-#### Environment Management
+PostgreSQL integration with proper error handling:
 
-- **`env`**: Checks for the `.env` file and creates it if missing.
+```go
+// The database interface is injected into handlers
+func (h *Handler) CreateUser(c *gin.Context) {
+    // Use h.Database.DB() to get *sqlx.DB instance
+    user := &User{}
+    err := h.Database.DB().Get(user, "SELECT * FROM users WHERE id = $1", userID)
+    if err != nil {
+        h.Logger.Error("Failed to fetch user", logging.Error(err))
+        return
+    }
+}
+```
 
-#### Swagger Documentation
+### Health Checks
 
-- **`swaggo`**: Installs the Swaggo tool for generating Swagger documentation.
-- **`swagger`**: Generates Swagger documentation from the codebase.
+Built-in health checks that verify:
 
-#### Build
+- Application status
+- Database connectivity
+- External service availability
 
-- **`build`**: Builds the application binary defaults to MacOS.
-- **`build-verbose`**: Builds the application with verbose output.
-- **`build-linux`**: Builds the application for Linux.
-- **`build-windows`**: Builds the application for Windows.
-- **`build-race`**: Builds the application with race detector enabled.
+### Configuration
 
-#### Run
+Type-safe configuration with validation:
 
-- **`run`**: Runs the built application binary, stored in the `build` directory.
+```go
+type AppConfig struct {
+    Name        string `envconfig:"APP_NAME" default:"goapp"`
+    Env         string `envconfig:"ENV" default:"development"`
+    Port        int    `envconfig:"PORT" default:"8080"`
+}
+```
 
-#### Docker Management
+## Development
 
-- **`docker-recycle`**: Recycles Docker containers using the `docker-recycle.sh` script, located in the root of the project.
-- **`docker-exec`**: Executes a shell in the Docker container.
+### Building
 
-#### Miscellaneous
+```bash
+# Build for current platform
+go build ./cmd/goapp
 
-- **`tidy`**: Tidy will clean up the Go module cache in the Go module directory.
-- **`monitors`**: Starts the monitoring stack with Prometheus and Grafana.
+# Build for Linux
+GOOS=linux go build ./cmd/goapp
 
+# Build with race detector
+go build -race ./cmd/goapp
+```
 
-Running `make first` is recommended to get your project set up and ready for development.
+### Testing
+
+```bash
+# Run all tests
+go test ./...
+
+# Run tests with coverage
+go test -cover ./...
+
+# Run tests with race detector
+go test -race ./...
+```
 
 ### Docker
 
-To run the application in Docker:
-
 ```bash
-docker-compose up --build
+# Build image
+docker build -t myapp .
+
+# Run with docker-compose
+docker-compose up
 ```
 
-Attach a shell to the container:
+## Extending the Template
 
-```bash
-docker run -it --entrypoint /bin/sh go-app
+### Adding New Dependencies
+
+1. Update `internal/config/config.go` with new configuration
+2. Add the service interface to your package
+3. Update `internal/container/container.go` to initialize the new service
+4. Inject into handlers via the container
+
+### Adding New Endpoints
+
+1. Create handler methods in `api/handlers/`
+2. Update `api/routes/routes.go` to register routes
+3. Add Swagger documentation comments
+4. Generate docs: `swag init`
+
+### Adding Middleware
+
+```go
+// In routes.go
+router.Use(authMiddleware(container))
+router.Use(corsMiddleware())
 ```
 
-## File Structure
+## Production Considerations
 
-```bash
-> tree
-.
-├── Dockerfile
-├── Makefile
-├── README.md
-├── assets
-│   └── certs
-├── docker-compose.yaml
-├── docker-recycle.sh
-├── goapp
-│   ├── api
-│   │   ├── handlers
-│   │   │   └── health.go
-│   │   └── routes
-│   │       └── routes.go
-│   ├── build
-│   │   └── goapp
-│   ├── cmd
-│   │   └── goapp
-│   │       └── main.go
-│   ├── docs
-│   │   ├── docs.go
-│   │   ├── swagger.json
-│   │   └── swagger.yaml
-│   ├── go.mod
-│   ├── go.sum
-│   ├── internal
-│   │   └── config
-│   │       └── config.go
-│   ├── pkg
-│   │   ├── clients
-│   │   │   └── clients.go
-│   │   ├── db
-│   │   │   ├── kafka
-│   │   │   │   ├── example.go
-│   │   │   │   ├── kafka.go
-│   │   │   │   └── model.go
-│   │   │   └── postgres
-│   │   │       ├── example.go
-│   │   │       ├── model.go
-│   │   │       └── postgres.go
-│   │   ├── logging
-│   │   │   ├── logging.go
-│   │   │   └── model.go
-│   │   └── otel
-│   │       └── otel.go
-│   ├── scripts
-│   ├── tests
-│   │   ├── helpers
-│   │   └── unit
-│   └── web
-│       ├── static
-│       └── templates
-├── logs
-│   └── app.log
-├── monitoring
-│   ├── datasources
-│   │   └── datasources.yaml
-│   ├── docker-compose.yaml
-│   └── prometheus.yaml
-└── rename_app.sh
-
-30 directories, 30 files
-```
-
-## Directory Overview
-
-- **api**: Contains the HTTP handlers and routes.
-- **build**: Build artifacts.
-- **cmd**: Main applications for the project.
-- **docs**: Documentation including Swagger.
-- **internal**: Internal application code.
-- **pkg**: Library code to be used by external applications.
-  - **db/kafka**: Kafka integration.
-  - **db/postgres**: PostgreSQL integration.
-  - **logging**: Logging setup.
-  - **otel**: OpenTelemetry setup.
-- **scripts**: Scripts for various tasks.
-- **tests**: Unit and helper tests.
-- **web**: Web assets like static files and templates.
-- **logs**: Application logs.
-- **monitoring**: Monitoring setup for Grafana and Prometheus.
-
-## Environment Variables
-
-The application uses `envconfig` to manage environment variables. Ensure the following variables are set:
-
-- **Kafka**:
-  - `KAFKA_BROKERS`
-  - `KAFKA_PRODUCER_TOPIC`
-  - `KAFKA_CONSUMER_TOPIC`
-  - `KAFKA_CONSUMER_GROUP`
-  - `KAFKA_CONSUMER_OFFSET`
-
-- **Postgres**:
-  - `DB_HOST`
-  - `DB_PORT`
-  - `DB_USER`
-  - `DB_PASSWORD`
-  - `DB_NAME`
-  - `DB_SSL_MODE`
-
-- **Prometheus**:
-  - `PROMETHEUS_PORT`
-
-## Logging
-
-The application uses Zap for structured logging with log rotation and retention. Logs are written to `app.log` and `error.log` in the `logs` directory.
+- Set `GO_APP_ENV=production` for optimized builds
+- Use proper secret management for sensitive configuration
+- Set up log aggregation (ELK stack, Fluentd, etc.)
+- Configure reverse proxy (nginx, Traefik)
+- Set up monitoring and alerting
+- Use database migrations for schema changes
+- Configure graceful shutdown timeouts appropriately
 
 ## Monitoring
 
-Prometheus is used for metrics collection and Grafana for visualization. The monitoring setup is available in the `monitoring` directory, just run `docker compose up` to start the monitoring stack which includes a single Prometheus instance and a Grafana instance. The Prometheus configuration is available in `monitoring/prometheus.yaml`, and the Grafana datasource configuration to pull metrics from Prometheus is available in `monitoring/datasources/datasources.yaml`.
+The template includes:
+
+- **Prometheus metrics**: Available at `/metrics`
+- **OpenTelemetry tracing**: Distributed tracing support
+- **Health checks**: Kubernetes-ready health endpoints
+- **Structured logging**: JSON formatted logs for aggregation
+
+## License
+
+This template is provided as-is for creating new Go projects. Modify as needed for your use case.

@@ -1,0 +1,368 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*', 'hotfix/*', 'release/*' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  GO_VERSION: '1.23'
+  GOLANGCI_LINT_VERSION: 'v1.55.2'
+  GOSEC_VERSION: '2.18.2'
+
+jobs:
+  # ================================================================
+  # Code Quality and Security
+  # ================================================================
+  lint:
+    name: Code Quality & Linting
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Cache Go Modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install Dependencies
+        run: |
+          cd goapp
+          go mod download
+          go mod verify
+
+      - name: Install Tools
+        run: |
+          cd goapp
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@${{ env.GOLANGCI_LINT_VERSION }}
+          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@v${{ env.GOSEC_VERSION }}
+          go install github.com/swaggo/swag/cmd/swag@latest
+          go install golang.org/x/tools/cmd/goimports@latest
+
+      - name: Format Check
+        run: |
+          cd goapp
+          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+            echo "Code is not formatted. Please run 'make fmt'"
+            gofmt -s -l .
+            exit 1
+          fi
+
+      - name: Imports Check
+        run: |
+          cd goapp
+          if [ "$(goimports -l . | wc -l)" -gt 0 ]; then
+            echo "Imports are not organized. Please run 'make fmt'"
+            goimports -l .
+            exit 1
+          fi
+
+      - name: Go Vet
+        run: |
+          cd goapp
+          go vet ./...
+
+      - name: golangci-lint
+        run: |
+          cd goapp
+          golangci-lint run --config ../.golangci.yml --timeout 5m
+
+      - name: Security Scan (gosec)
+        run: |
+          cd goapp
+          gosec -quiet ./...
+
+  # ================================================================
+  # Testing
+  # ================================================================
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.22', '1.23']
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Cache Go Modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ matrix.go-version }}-
+
+      - name: Install Dependencies
+        run: |
+          cd goapp
+          go mod download
+
+      - name: Run Tests
+        run: |
+          cd goapp
+          go test -v -race -timeout 30m ./...
+
+      - name: Run Tests with Coverage
+        run: |
+          cd goapp
+          go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Coverage Summary
+        run: |
+          cd goapp
+          go tool cover -func=coverage.out | tail -1
+
+      - name: Upload Coverage to Codecov
+        if: matrix.go-version == '1.23'
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./goapp/coverage.out
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  # ================================================================
+  # Build
+  # ================================================================
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    strategy:
+      matrix:
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+        exclude:
+          - goos: windows
+            goarch: arm64
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install Dependencies
+        run: |
+          cd goapp
+          go mod download
+
+      - name: Install Tools
+        run: |
+          cd goapp
+          go install github.com/swaggo/swag/cmd/swag@latest
+
+      - name: Generate Documentation
+        run: |
+          cd goapp
+          swag init -g ./cmd/goapp/main.go --output docs
+
+      - name: Build Binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          cd goapp
+          mkdir -p build
+          
+          # Set binary extension for Windows
+          BINARY_NAME="goapp"
+          if [ "$GOOS" = "windows" ]; then
+            BINARY_NAME="${BINARY_NAME}.exe"
+          fi
+          
+          # Build with version information
+          VERSION="${GITHUB_REF_NAME:-unknown}"
+          BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          GIT_COMMIT="${GITHUB_SHA::8}"
+          GIT_BRANCH="${GITHUB_REF_NAME:-unknown}"
+          
+          go build \
+            -ldflags="-X main.version=${VERSION} -X main.buildTime=${BUILD_TIME} -X main.gitCommit=${GIT_COMMIT} -X main.gitBranch=${GIT_BRANCH} -s -w" \
+            -o "build/${BINARY_NAME}-${GOOS}-${GOARCH}" \
+            ./cmd/goapp
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: goapp/build/
+          retention-days: 7
+
+  # ================================================================
+  # Docker Build
+  # ================================================================
+  docker:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # ================================================================
+  # Security Scanning
+  # ================================================================
+  security:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # ================================================================
+  # Dependency Review
+  # ================================================================
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        with:
+          fail-on-severity: moderate
+
+  # ================================================================
+  # Performance Benchmarks
+  # ================================================================
+  benchmark:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install Dependencies
+        run: |
+          cd goapp
+          go mod download
+
+      - name: Run Benchmarks
+        run: |
+          cd goapp
+          go test -bench=. -benchmem -run=^$ ./... > benchmark-results.txt
+
+      - name: Upload Benchmark Results
+        uses: actions/upload-artifact@v3
+        with:
+          name: benchmark-results
+          path: goapp/benchmark-results.txt
+          retention-days: 30
+
+  # ================================================================
+  # Notification
+  # ================================================================
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [lint, test, build, docker, security]
+    if: always()
+    steps:
+      - name: Check Job Status
+        run: |
+          echo "Lint: ${{ needs.lint.result }}"
+          echo "Test: ${{ needs.test.result }}"
+          echo "Build: ${{ needs.build.result }}"
+          echo "Docker: ${{ needs.docker.result }}"
+          echo "Security: ${{ needs.security.result }}"
+          
+          if [[ "${{ needs.lint.result }}" == "failure" || 
+                "${{ needs.test.result }}" == "failure" || 
+                "${{ needs.build.result }}" == "failure" ]]; then
+            echo "Critical job failed!"
+            exit 1
+          fi

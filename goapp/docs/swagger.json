@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "This is a sample server GoApp server.",
-        "title": "GoApp Gin Rest API",
+        "description": "Production-ready Go REST API with dependency injection",
+        "title": "GoApp REST API",
         "termsOfService": "\u003curl\u003e",
         "contact": {
             "name": "Peter Bryant",

@@ -1,0 +1,84 @@
+package pages
+
+import (
+	"goapp/web/templates"
+	"goapp/internal/models"
+	"fmt"
+)
+
+templ PostsIndex(posts []models.Post) {
+	@templates.PageLayout("Posts", postsContent(posts))
+}
+
+templ postsContent(posts []models.Post) {
+	<div class="space-y-6">
+		<div class="flex justify-between items-center">
+			<h1 class="text-3xl font-bold text-gray-900">Posts</h1>
+			<button
+				hx-get="/posts/new"
+				hx-target="#main-content"
+				hx-push-url="true"
+				class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+			>
+				<svg class="-ml-1 mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+				</svg>
+				New Post
+			</button>
+		</div>
+		
+		<div class="bg-white shadow overflow-hidden sm:rounded-md">
+			<ul class="divide-y divide-gray-200">
+				for _, post := range posts {
+					@PostListItem(post)
+				}
+			</ul>
+		</div>
+		
+		if len(posts) == 0 {
+			<div class="text-center py-12">
+				<svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+				</svg>
+				<h3 class="mt-2 text-sm font-medium text-gray-900">No posts</h3>
+				<p class="mt-1 text-sm text-gray-500">Get started by creating a new post.</p>
+			</div>
+		}
+	</div>
+}
+
+templ PostListItem(post models.Post) {
+	<li>
+		<a href={ templ.SafeURL(fmt.Sprintf("/posts/%d", post.ID)) } class="block hover:bg-gray-50 px-4 py-4 sm:px-6">
+			<div class="flex items-center justify-between">
+				<div class="flex-1 min-w-0">
+					<div class="flex items-center justify-between">
+						<p class="text-lg font-medium text-indigo-600 truncate">{ post.Title }</p>
+						if post.Published {
+							<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+								Published
+							</span>
+						} else {
+							<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+								Draft
+							</span>
+						}
+					</div>
+					<p class="mt-1 text-sm text-gray-600">{ post.Summary }</p>
+					<div class="mt-2 flex items-center text-sm text-gray-500">
+						<svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						</svg>
+						{ post.CreatedAt.Format("Jan 2, 2006") }
+						<span class="mx-2">·</span>
+						<svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+						</svg>
+						{ fmt.Sprintf("%d views", post.ViewCount) }
+					</div>
+				</div>
+			</div>
+		</a>
+	</li>
+}

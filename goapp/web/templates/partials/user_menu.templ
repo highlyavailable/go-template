@@ -1,0 +1,26 @@
+package partials
+
+templ UserMenuDropdown(username string) {
+	<div 
+		x-data="{ open: true }" 
+		x-show="open" 
+		x-transition:enter="transition ease-out duration-100"
+		x-transition:enter-start="transform opacity-0 scale-95"
+		x-transition:enter-end="transform opacity-100 scale-100"
+		x-transition:leave="transition ease-in duration-75"
+		x-transition:leave-start="transform opacity-100 scale-100"
+		x-transition:leave-end="transform opacity-0 scale-95"
+		@click.away="open = false"
+		class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
+	>
+		<div class="px-4 py-2 border-b border-gray-100">
+			<p class="text-sm font-medium text-gray-900">{ username }</p>
+			<p class="text-xs text-gray-500">user@example.com</p>
+		</div>
+		
+		<a href="/profile" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Your Profile</a>
+		<a href="/settings" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+		<hr class="my-1"/>
+		<a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Sign out</a>
+	</div>
+}

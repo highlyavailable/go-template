@@ -1,28 +1,26 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	_ "goapp/docs" // Import generated docs
-	"goapp/pkg/logging"
-	"log"
-	"path/filepath"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/kelseyhightower/envconfig"
+	"goapp/api/routes"
+	_ "goapp/docs" // Import generated docs
+	"goapp/internal/container"
+	"goapp/internal/observability"
+
+	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 )
 
-type Specification struct {
-	AppName     string `envconfig:"APP_NAME" default:"goapp"`
-	ProjectRoot string `envconfig:"PROJECT_ROOT" default:"/Users/PeterWBryant/Repos/go-template"`
-	EnvPath     string `envconfig:"ENV_PATH"`
-	LogDirPath  string `envconfig:"LOG_DIR_PATH"`
-	CertDirPath string `envconfig:"CERT_DIR_PATH"`
-	Env         string `envconfig:"ENV" default:"development"`
-	Port        int    `envconfig:"PORT" default:"8080"`
-}
-
-// @title GoApp Gin Rest API
+// @title GoApp REST API
 // @version 1.0
-// @description This is a sample server GoApp server.
+// @description Production-ready Go REST API with dependency injection
 // @termsOfService <url>
 
 // @contact.name Peter Bryant
@@ -34,31 +32,71 @@ type Specification struct {
 // @host localhost:8080
 // @BasePath /
 func main() {
-	// Load env vars into Specification struct
-	var s Specification
-	err := envconfig.Process("GO_APP", &s)
+	// Initialize dependency injection container
+	c, err := container.New()
 	if err != nil {
-		log.Fatal(err.Error())
+		fmt.Printf("Failed to initialize container: %v\n", err)
+		os.Exit(1)
 	}
-	format := "AppName: %s\nProjectRoot: %s\nEnvPath: %s\nLogDirPath: %s\nCertDirPath: %s\nEnv: %s\nPort: %d\n"
-	_, err = fmt.Printf(format, s.AppName, s.ProjectRoot, s.EnvPath, s.LogDirPath, s.CertDirPath, s.Env, s.Port)
-	if err != nil {
-		log.Fatal(err.Error())
+	defer c.Close()
+
+	c.Logger.Infof("Application starting: name=%s, env=%s", c.Config.App.Name, c.Config.App.Env)
+
+	// Set Gin mode based on environment
+	if c.Config.App.Env == "production" {
+		gin.SetMode(gin.ReleaseMode)
 	}
 
-	// Init zapLogger configuration
-	var loggerConf = logging.LoggerConfig{
-		Environment:      s.Env,
-		AppLogPath:       filepath.Join(s.LogDirPath, "app.log"),
-		ErrLogPath:       filepath.Join(s.LogDirPath, "error.log"),
-		WriteStdout:      true,
-		EnableStackTrace: false,
-		MaxSize:          1,
-		MaxBackups:       5,
-		MaxAge:           30,
-		Compress:         true,
+	// Initialize OpenTelemetry if enabled
+	var shutdownTracer, shutdownMeter func()
+	if c.Config.Observability.Enabled {
+		c.Logger.Info("OpenTelemetry enabled - initializing tracing and metrics")
+		shutdownTracer = observability.InitTracer(c.Config.Observability)
+		defer shutdownTracer()
+		shutdownMeter = observability.InitMeter(c.Config.Observability)
+		defer shutdownMeter()
+		
+		// Initialize custom counter for demonstration
+		counter := observability.InitCustomCounter("http_requests_total")
+		observability.UpdateCounter(counter, 1)
 	}
-	logging.InitLogger(loggerConf)
-	// logging.TestRotation(1e4)     // Test log rotation by dumping 10k error msgs
 
+	// Setup router with dependency injection
+	router := routes.SetupRouter(c)
+	
+	// Add OpenTelemetry middleware if enabled
+	if c.Config.Observability.Enabled {
+		router.Use(otelgin.Middleware(c.Config.Observability.ServiceName))
+	}
+
+	// Setup HTTP server
+	server := &http.Server{
+		Addr:    fmt.Sprintf(":%d", c.Config.App.Port),
+		Handler: router,
+	}
+
+	// Start server in a goroutine
+	go func() {
+		c.Logger.Infof("Starting HTTP server on port %d", c.Config.App.Port)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			c.Logger.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	c.Logger.Info("Shutting down server...")
+
+	// Give outstanding requests 5 seconds to complete
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		c.Logger.Fatalf("Server forced to shutdown: %v", err)
+	}
+
+	c.Logger.Info("Server exited")
 }

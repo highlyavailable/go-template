@@ -5,12 +5,12 @@ info:
     email: <email>
     name: Peter Bryant
     url: <url>
-  description: This is a sample server GoApp server.
+  description: Production-ready Go REST API with dependency injection
   license:
     name: Apache 2.0
     url: <url>
   termsOfService: <url>
-  title: GoApp Gin Rest API
+  title: GoApp REST API
   version: "1.0"
 paths:
   /health:

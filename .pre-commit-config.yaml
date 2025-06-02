@@ -1,0 +1,215 @@
+# Pre-commit hooks configuration for Go Template
+# Install with: pip install pre-commit && pre-commit install
+# Run with: pre-commit run --all-files
+
+repos:
+  # Go formatting and imports
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+        name: Format Go code
+        description: Runs gofmt, requires golang
+        entry: gofmt
+        language: golang
+        types: [go]
+        args: [-w]
+      
+      - id: go-imports
+        name: Fix Go imports
+        description: Runs goimports, requires golang
+        entry: goimports
+        language: golang
+        types: [go]
+        args: [-w]
+      
+      - id: go-vet-mod
+        name: Run go vet
+        description: Runs go vet with modules
+        entry: go
+        language: golang
+        types: [go]
+        pass_filenames: false
+        args: [vet, ./...]
+      
+      - id: go-mod-tidy
+        name: Tidy Go modules
+        description: Runs go mod tidy
+        entry: go
+        language: golang
+        pass_filenames: false
+        args: [mod, tidy]
+        files: go.mod
+
+  # Security scanning
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        name: Detect secrets
+        description: Detect secrets in code
+        args: ['--baseline', '.secrets.baseline']
+        exclude: |
+          (?x)^(
+            .*\.lock|
+            .*\.min\.js|
+            .*\.min\.css|
+            package-lock\.json|
+            yarn\.lock
+          )$
+
+  # YAML formatting
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-yaml
+        name: Check YAML syntax
+        description: Check YAML files for syntax errors
+        
+      - id: check-json
+        name: Check JSON syntax
+        description: Check JSON files for syntax errors
+        
+      - id: check-toml
+        name: Check TOML syntax
+        description: Check TOML files for syntax errors
+        
+      - id: check-xml
+        name: Check XML syntax
+        description: Check XML files for syntax errors
+        
+      - id: end-of-file-fixer
+        name: Fix end of files
+        description: Ensures files end with a newline
+        
+      - id: trailing-whitespace
+        name: Trim trailing whitespace
+        description: Trims trailing whitespace
+        
+      - id: check-merge-conflict
+        name: Check for merge conflicts
+        description: Check for files that contain merge conflict strings
+        
+      - id: check-added-large-files
+        name: Check for large files
+        description: Prevent giant files from being committed
+        args: ['--maxkb=1000']
+        
+      - id: check-case-conflict
+        name: Check for case conflicts
+        description: Check for files that would conflict in case-insensitive filesystems
+        
+      - id: check-executables-have-shebangs
+        name: Check executable shebangs
+        description: Ensures executables have shebangs
+        
+      - id: check-shebang-scripts-are-executable
+        name: Check shebang executables
+        description: Ensures scripts with shebangs are executable
+
+  # Dockerfile linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint
+        name: Lint Dockerfiles
+        description: Lint Dockerfiles with hadolint
+
+  # Markdown formatting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.37.0
+    hooks:
+      - id: markdownlint
+        name: Lint Markdown
+        description: Lint Markdown files
+        args: ['--fix']
+
+  # Shell script linting
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.9.0.6
+    hooks:
+      - id: shellcheck
+        name: Lint shell scripts
+        description: Lint shell scripts with shellcheck
+
+  # Makefile linting
+  - repo: https://github.com/mrtazz/checkmake
+    rev: 0.2.2
+    hooks:
+      - id: checkmake
+        name: Lint Makefiles
+        description: Lint Makefiles
+
+  # Local hooks for Go-specific tools
+  - repo: local
+    hooks:
+      - id: go-test
+        name: Run Go tests
+        description: Run Go tests
+        entry: bash
+        language: system
+        args:
+          - -c
+          - 'cd goapp && go test -timeout 30s ./...'
+        types: [go]
+        pass_filenames: false
+
+      - id: go-build
+        name: Build Go application
+        description: Build Go application to catch compilation errors
+        entry: bash
+        language: system
+        args:
+          - -c
+          - 'cd goapp && go build -o /tmp/goapp-build-check ./cmd/goapp'
+        types: [go]
+        pass_filenames: false
+
+      - id: golangci-lint
+        name: Run golangci-lint
+        description: Run golangci-lint on Go code
+        entry: bash
+        language: system
+        args:
+          - -c
+          - 'cd goapp && golangci-lint run --config ../.golangci.yml'
+        types: [go]
+        pass_filenames: false
+
+      - id: gosec
+        name: Run gosec security scanner
+        description: Run gosec security analysis
+        entry: bash
+        language: system
+        args:
+          - -c
+          - 'cd goapp && gosec ./...'
+        types: [go]
+        pass_filenames: false
+
+      - id: go-mod-verify
+        name: Verify Go modules
+        description: Verify Go module dependencies
+        entry: bash
+        language: system
+        args:
+          - -c
+          - 'cd goapp && go mod verify'
+        files: go.mod|go.sum
+        pass_filenames: false
+
+      - id: swagger-generate
+        name: Generate Swagger docs
+        description: Generate Swagger documentation
+        entry: bash
+        language: system
+        args:
+          - -c
+          - 'cd goapp && swag init -g ./cmd/goapp/main.go --output docs'
+        files: '.*\.go$'
+        pass_filenames: false
+
+# Configuration for specific tools
+default_stages: [commit]
+fail_fast: false
+minimum_pre_commit_version: '3.0.0'

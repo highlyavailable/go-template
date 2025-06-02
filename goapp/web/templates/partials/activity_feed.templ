@@ -1,0 +1,67 @@
+package partials
+
+import (
+	"time"
+	"fmt"
+)
+
+type ActivityItem struct {
+	Type        string
+	Description string
+	Time        time.Time
+	Icon        string
+	IconColor   string
+}
+
+templ ActivityFeed(activities []ActivityItem) {
+	<div class="flow-root">
+		<ul class="-mb-8">
+			for i, activity := range activities {
+				<li>
+					<div class="relative pb-8">
+						if i < len(activities)-1 {
+							<span class="absolute top-4 left-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+						}
+						<div class="relative flex space-x-3">
+							<div>
+								<span class={ "h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white", activity.IconColor }>
+									<svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={ activity.Icon }></path>
+									</svg>
+								</span>
+							</div>
+							<div class="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
+								<div>
+									<p class="text-sm text-gray-500">{ activity.Description }</p>
+								</div>
+								<div class="text-right text-sm whitespace-nowrap text-gray-500">
+									<time datetime={ activity.Time.Format("2006-01-02T15:04:05") }>
+										{ formatRelativeTime(activity.Time) }
+									</time>
+								</div>
+							</div>
+						</div>
+					</div>
+				</li>
+			}
+		</ul>
+	</div>
+}
+
+func formatRelativeTime(t time.Time) string {
+	now := time.Now()
+	diff := now.Sub(t)
+	
+	switch {
+	case diff < time.Minute:
+		return "just now"
+	case diff < time.Hour:
+		return fmt.Sprintf("%d minutes ago", int(diff.Minutes()))
+	case diff < 24*time.Hour:
+		return fmt.Sprintf("%d hours ago", int(diff.Hours()))
+	case diff < 7*24*time.Hour:
+		return fmt.Sprintf("%d days ago", int(diff.Hours()/24))
+	default:
+		return t.Format("Jan 2, 2006")
+	}
+}
