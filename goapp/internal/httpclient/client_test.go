@@ -13,7 +13,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:         30 * time.Second,
 		MaxRetries:      3,
 		UserAgent:       "test-agent",
@@ -56,7 +56,7 @@ func TestClient_Get(t *testing.T) {
 	defer server.Close()
 	
 	// Create client
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:    5 * time.Second,
 		MaxRetries: 1,
 	}
@@ -98,7 +98,7 @@ func TestClient_Retry(t *testing.T) {
 	}))
 	defer server.Close()
 	
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:      5 * time.Second,
 		MaxRetries:   3,
 		RetryWaitMin: 10 * time.Millisecond,
@@ -138,7 +138,7 @@ func TestClient_HealthCheck(t *testing.T) {
 	}))
 	defer server.Close()
 	
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout: 5 * time.Second,
 	}
 	
@@ -166,7 +166,7 @@ func TestClient_HealthCheckFail(t *testing.T) {
 	}))
 	defer server.Close()
 	
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout: 5 * time.Second,
 	}
 	
@@ -230,7 +230,7 @@ func TestClient_Post(t *testing.T) {
 	}))
 	defer server.Close()
 	
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:    5 * time.Second,
 		MaxRetries: 1,
 	}
@@ -268,7 +268,7 @@ func TestClient_Put(t *testing.T) {
 	}))
 	defer server.Close()
 	
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:    5 * time.Second,
 		MaxRetries: 1,
 	}
@@ -306,7 +306,7 @@ func TestClient_Delete(t *testing.T) {
 	}))
 	defer server.Close()
 	
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:    5 * time.Second,
 		MaxRetries: 1,
 	}
@@ -335,7 +335,7 @@ func TestClient_Delete(t *testing.T) {
 }
 
 func TestClient_Close(t *testing.T) {
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:    5 * time.Second,
 		MaxRetries: 1,
 	}
@@ -367,7 +367,7 @@ func TestClient_WithCustomHeaders(t *testing.T) {
 	}))
 	defer server.Close()
 	
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:   5 * time.Second,
 		UserAgent: "custom-agent",
 		Headers: map[string]string{
@@ -402,7 +402,7 @@ func TestClient_MaxRetries(t *testing.T) {
 	}))
 	defer server.Close()
 	
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:      1 * time.Second,
 		MaxRetries:   2,
 		RetryWaitMin: 10 * time.Millisecond,
@@ -434,7 +434,7 @@ func TestClient_MaxRetries(t *testing.T) {
 }
 
 func TestNew_WithInvalidProxy(t *testing.T) {
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:   30 * time.Second,
 		ProxyURL:  "://invalid-url", // Invalid URL without scheme
 	}
@@ -452,7 +452,7 @@ func TestNew_WithInvalidProxy(t *testing.T) {
 }
 
 func TestNew_WithValidProxy(t *testing.T) {
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:   30 * time.Second,
 		ProxyURL:  "http://proxy.example.com:8080",
 	}
@@ -474,7 +474,7 @@ func TestNew_WithValidProxy(t *testing.T) {
 }
 
 func TestNew_WithInvalidCertificates(t *testing.T) {
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:  30 * time.Second,
 		CertFile: "/nonexistent/cert.pem",
 		KeyFile:  "/nonexistent/key.pem",
@@ -507,7 +507,7 @@ func TestClient_WithRedirects(t *testing.T) {
 	}))
 	defer server.Close()
 
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:    5 * time.Second,
 		MaxRetries: 1,
 	}
@@ -546,7 +546,7 @@ func TestClient_TooManyRedirects(t *testing.T) {
 	}))
 	defer server.Close()
 
-	cfg := Config{
+	cfg := config.HTTPClientConfig{
 		Timeout:    5 * time.Second,
 		MaxRetries: 0, // No retries for this test
 	}

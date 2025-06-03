@@ -40,26 +40,7 @@ func New() (*Container, error) {
 	}
 
 	// Initialize HTTP client
-	// Convert config.HTTPClientConfig to httpclient.Config
-	httpClientConfig := httpclient.Config{
-		Timeout:             cfg.HTTPClient.Timeout,
-		DialTimeout:         cfg.HTTPClient.DialTimeout,
-		TLSTimeout:          cfg.HTTPClient.TLSTimeout,
-		MaxIdleConns:        cfg.HTTPClient.MaxIdleConns,
-		MaxIdleConnsPerHost: cfg.HTTPClient.MaxIdleConnsPerHost,
-		IdleConnTimeout:     cfg.HTTPClient.IdleConnTimeout,
-		InsecureSkipVerify:  cfg.HTTPClient.InsecureSkipVerify,
-		CertFile:            cfg.HTTPClient.CertFile,
-		KeyFile:             cfg.HTTPClient.KeyFile,
-		ProxyURL:            cfg.HTTPClient.ProxyURL,
-		MaxRetries:          cfg.HTTPClient.MaxRetries,
-		RetryWaitMin:        cfg.HTTPClient.RetryWaitMin,
-		RetryWaitMax:        cfg.HTTPClient.RetryWaitMax,
-		UserAgent:           cfg.HTTPClient.UserAgent,
-		Headers:             cfg.HTTPClient.Headers,
-	}
-	
-	httpClient, err := httpclient.New(httpClientConfig, logger)
+	httpClient, err := httpclient.New(cfg.HTTPClient, logger)
 	if err != nil {
 		return nil, err
 	}
