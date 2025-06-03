@@ -3,15 +3,17 @@ package container
 import (
 	"goapp/internal/config"
 	"goapp/internal/db/postgres"
+	"goapp/internal/httpclient"
 	"goapp/internal/logging"
 	"go.uber.org/zap"
 )
 
 // Container holds all application dependencies
 type Container struct {
-	Config   config.Config
-	Logger   logging.Logger
-	Database postgres.Database
+	Config     config.Config
+	Logger     logging.Logger
+	Database   postgres.Database
+	HTTPClient *httpclient.Client
 }
 
 // New creates a new dependency injection container
@@ -37,10 +39,36 @@ func New() (*Container, error) {
 		database = nil
 	}
 
+	// Initialize HTTP client
+	// Convert config.HTTPClientConfig to httpclient.Config
+	httpClientConfig := httpclient.Config{
+		Timeout:             cfg.HTTPClient.Timeout,
+		DialTimeout:         cfg.HTTPClient.DialTimeout,
+		TLSTimeout:          cfg.HTTPClient.TLSTimeout,
+		MaxIdleConns:        cfg.HTTPClient.MaxIdleConns,
+		MaxIdleConnsPerHost: cfg.HTTPClient.MaxIdleConnsPerHost,
+		IdleConnTimeout:     cfg.HTTPClient.IdleConnTimeout,
+		InsecureSkipVerify:  cfg.HTTPClient.InsecureSkipVerify,
+		CertFile:            cfg.HTTPClient.CertFile,
+		KeyFile:             cfg.HTTPClient.KeyFile,
+		ProxyURL:            cfg.HTTPClient.ProxyURL,
+		MaxRetries:          cfg.HTTPClient.MaxRetries,
+		RetryWaitMin:        cfg.HTTPClient.RetryWaitMin,
+		RetryWaitMax:        cfg.HTTPClient.RetryWaitMax,
+		UserAgent:           cfg.HTTPClient.UserAgent,
+		Headers:             cfg.HTTPClient.Headers,
+	}
+	
+	httpClient, err := httpclient.New(httpClientConfig, logger)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Container{
-		Config:   cfg,
-		Logger:   logger,
-		Database: database,
+		Config:     cfg,
+		Logger:     logger,
+		Database:   database,
+		HTTPClient: httpClient,
 	}, nil
 }
 

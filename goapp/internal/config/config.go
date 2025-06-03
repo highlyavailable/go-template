@@ -2,6 +2,7 @@ package config
 
 import (
 	"path/filepath"
+	"time"
 
 	"github.com/kelseyhightower/envconfig"
 )
@@ -14,6 +15,7 @@ type Config struct {
 	Logger        LoggerConfig       `envconfig:"LOGGER"`
 	Kafka         KafkaConfig        `envconfig:"KAFKA"`
 	Observability ObservabilityConfig `envconfig:"OTEL"`
+	HTTPClient    HTTPClientConfig    `envconfig:"HTTP_CLIENT"`
 }
 
 // AppConfig holds application-specific configuration
@@ -88,6 +90,36 @@ type ObservabilityConfig struct {
 	Environment string `envconfig:"ENVIRONMENT" default:"development"`
 }
 
+// HTTPClientConfig holds HTTP client configuration
+type HTTPClientConfig struct {
+	// Timeouts
+	Timeout     time.Duration `envconfig:"TIMEOUT" default:"30s"`
+	DialTimeout time.Duration `envconfig:"DIAL_TIMEOUT" default:"10s"`
+	TLSTimeout  time.Duration `envconfig:"TLS_TIMEOUT" default:"10s"`
+
+	// Connection pooling
+	MaxIdleConns        int           `envconfig:"MAX_IDLE_CONNS" default:"100"`
+	MaxIdleConnsPerHost int           `envconfig:"MAX_IDLE_CONNS_PER_HOST" default:"10"`
+	IdleConnTimeout     time.Duration `envconfig:"IDLE_CONN_TIMEOUT" default:"90s"`
+
+	// TLS
+	InsecureSkipVerify bool   `envconfig:"INSECURE_SKIP_VERIFY" default:"false"`
+	CertFile           string `envconfig:"CERT_FILE"`
+	KeyFile            string `envconfig:"KEY_FILE"`
+
+	// Proxy
+	ProxyURL string `envconfig:"PROXY_URL"`
+
+	// Retry
+	MaxRetries   int           `envconfig:"MAX_RETRIES" default:"3"`
+	RetryWaitMin time.Duration `envconfig:"RETRY_WAIT_MIN" default:"1s"`
+	RetryWaitMax time.Duration `envconfig:"RETRY_WAIT_MAX" default:"30s"`
+
+	// Headers
+	UserAgent string            `envconfig:"USER_AGENT" default:"goapp/1.0"`
+	Headers   map[string]string `envconfig:"HEADERS"`
+}
+
 // Load loads configuration from environment variables
 func Load() (Config, error) {
 	var cfg Config
@@ -103,6 +135,7 @@ func Load() (Config, error) {
 		{"LOGGER", &cfg.Logger},
 		{"KAFKA", &cfg.Kafka},
 		{"OTEL", &cfg.Observability},
+		{"HTTP_CLIENT", &cfg.HTTPClient},
 	}
 	
 	// Process each prefix

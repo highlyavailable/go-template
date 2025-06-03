@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"testing"
+	"time"
 )
 
 func TestLoad(t *testing.T) {
@@ -220,5 +221,88 @@ func TestLogPathNotSetWhenAlreadyProvided(t *testing.T) {
 	}
 	if cfg.Logger.ErrLogPath != "/custom/error.log" {
 		t.Errorf("Expected error log path '/custom/error.log', got '%s'", cfg.Logger.ErrLogPath)
+	}
+}
+
+func TestLoadHTTPClientConfig(t *testing.T) {
+	// Test successful HTTP client config loading
+	os.Setenv("HTTP_CLIENT_TIMEOUT", "60s")
+	os.Setenv("HTTP_CLIENT_MAX_RETRIES", "5")
+	os.Setenv("HTTP_CLIENT_USER_AGENT", "test-agent/2.0")
+	os.Setenv("HTTP_CLIENT_INSECURE_SKIP_VERIFY", "true")
+	os.Setenv("HTTP_CLIENT_PROXY_URL", "http://proxy.example.com:8080")
+	
+	defer func() {
+		os.Unsetenv("HTTP_CLIENT_TIMEOUT")
+		os.Unsetenv("HTTP_CLIENT_MAX_RETRIES")
+		os.Unsetenv("HTTP_CLIENT_USER_AGENT")
+		os.Unsetenv("HTTP_CLIENT_INSECURE_SKIP_VERIFY")
+		os.Unsetenv("HTTP_CLIENT_PROXY_URL")
+	}()
+	
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load config: %v", err)
+	}
+	
+	// Test HTTP client config was loaded correctly
+	if cfg.HTTPClient.Timeout != 60*time.Second {
+		t.Errorf("Expected timeout 60s, got %v", cfg.HTTPClient.Timeout)
+	}
+	if cfg.HTTPClient.MaxRetries != 5 {
+		t.Errorf("Expected max retries 5, got %d", cfg.HTTPClient.MaxRetries)
+	}
+	if cfg.HTTPClient.UserAgent != "test-agent/2.0" {
+		t.Errorf("Expected user agent 'test-agent/2.0', got '%s'", cfg.HTTPClient.UserAgent)
+	}
+	if cfg.HTTPClient.InsecureSkipVerify != true {
+		t.Errorf("Expected insecure skip verify true, got %t", cfg.HTTPClient.InsecureSkipVerify)
+	}
+	if cfg.HTTPClient.ProxyURL != "http://proxy.example.com:8080" {
+		t.Errorf("Expected proxy URL 'http://proxy.example.com:8080', got '%s'", cfg.HTTPClient.ProxyURL)
+	}
+}
+
+func TestLoadHTTPClientDefaults(t *testing.T) {
+	// Clear any existing HTTP client environment variables
+	vars := []string{
+		"HTTP_CLIENT_TIMEOUT", "HTTP_CLIENT_DIAL_TIMEOUT", "HTTP_CLIENT_TLS_TIMEOUT",
+		"HTTP_CLIENT_MAX_IDLE_CONNS", "HTTP_CLIENT_MAX_RETRIES", "HTTP_CLIENT_USER_AGENT",
+	}
+	
+	for _, v := range vars {
+		os.Unsetenv(v)
+	}
+	
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Failed to load config with defaults: %v", err)
+	}
+	
+	// Test default values
+	if cfg.HTTPClient.Timeout != 30*time.Second {
+		t.Errorf("Expected default timeout 30s, got %v", cfg.HTTPClient.Timeout)
+	}
+	if cfg.HTTPClient.DialTimeout != 10*time.Second {
+		t.Errorf("Expected default dial timeout 10s, got %v", cfg.HTTPClient.DialTimeout)
+	}
+	if cfg.HTTPClient.MaxIdleConns != 100 {
+		t.Errorf("Expected default max idle conns 100, got %d", cfg.HTTPClient.MaxIdleConns)
+	}
+	if cfg.HTTPClient.MaxRetries != 3 {
+		t.Errorf("Expected default max retries 3, got %d", cfg.HTTPClient.MaxRetries)
+	}
+	if cfg.HTTPClient.UserAgent != "goapp/1.0" {
+		t.Errorf("Expected default user agent 'goapp/1.0', got '%s'", cfg.HTTPClient.UserAgent)
+	}
+}
+
+func TestLoadHTTPClientError(t *testing.T) {
+	os.Setenv("HTTP_CLIENT_MAX_RETRIES", "invalid_number")
+	defer os.Unsetenv("HTTP_CLIENT_MAX_RETRIES")
+	
+	_, err := Load()
+	if err == nil {
+		t.Error("Expected error when HTTP client config is invalid")
 	}
 }
