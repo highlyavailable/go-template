@@ -92,34 +92,24 @@ type ObservabilityConfig struct {
 func Load() (Config, error) {
 	var cfg Config
 	
-	// Load app config
-	if err := envconfig.Process("GO_APP", &cfg.App); err != nil {
-		return cfg, err
+	// Define prefixes and their corresponding config fields
+	prefixConfigs := []struct {
+		prefix string
+		field  interface{}
+	}{
+		{"GO_APP", &cfg.App},
+		{"POSTGRES", &cfg.Database},
+		{"MSSQL", &cfg.MSSQL},
+		{"LOGGER", &cfg.Logger},
+		{"KAFKA", &cfg.Kafka},
+		{"OTEL", &cfg.Observability},
 	}
 	
-	// Load database config
-	if err := envconfig.Process("POSTGRES", &cfg.Database); err != nil {
-		return cfg, err
-	}
-	
-	// Load MSSQL config
-	if err := envconfig.Process("MSSQL", &cfg.MSSQL); err != nil {
-		return cfg, err
-	}
-	
-	// Load logger config
-	if err := envconfig.Process("LOGGER", &cfg.Logger); err != nil {
-		return cfg, err
-	}
-	
-	// Load kafka config  
-	if err := envconfig.Process("KAFKA", &cfg.Kafka); err != nil {
-		return cfg, err
-	}
-	
-	// Load observability config
-	if err := envconfig.Process("OTEL", &cfg.Observability); err != nil {
-		return cfg, err
+	// Process each prefix
+	for _, pc := range prefixConfigs {
+		if err := envconfig.Process(pc.prefix, pc.field); err != nil {
+			return cfg, err
+		}
 	}
 	
 	// Set default log paths if not provided
