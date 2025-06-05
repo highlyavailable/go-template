@@ -40,6 +40,7 @@ cache:
 stages:
   - validate
   - test
+  - renovate  
   - build
   - security
   - package
@@ -108,6 +109,46 @@ validate:modules:
     - merge_requests
     - main
     - develop
+
+# ================================================================
+# Renovate Stage
+# ================================================================
+
+renovate:
+  stage: renovate
+  image: renovate/renovate:39.57.4
+  variables:
+    RENOVATE_PLATFORM: gitlab
+    RENOVATE_ENDPOINT: $CI_API_V4_URL
+    RENOVATE_REPOSITORY: $CI_PROJECT_PATH
+    RENOVATE_CONFIG_FILE: renovate.json
+    LOG_LEVEL: info
+    RENOVATE_TOKEN: $RENOVATE_TOKEN
+  script:
+    - renovate $CI_PROJECT_PATH
+  rules:
+    # Run manually via web UI
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: manual
+    # Run on schedule (if you set up pipeline schedules)
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      when: always
+    # Optionally run on specific branch pushes to test config
+    - if: '$CI_COMMIT_BRANCH == "main" && $CI_COMMIT_MESSAGE =~ /renovate/'
+      when: manual
+  allow_failure: true
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - renovate-log.ndjson
+    reports:
+      # Creates report in GitLab UI
+      junit: renovate-report.xml
+  cache:
+    key: renovate-cache
+    paths:
+      - .renovate-cache/
 
 # ================================================================
 # Testing Stage
